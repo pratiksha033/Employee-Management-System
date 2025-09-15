@@ -1,5 +1,14 @@
 import Department from "../models/DepartmentSchema.js";
 
+const getDepartments = async(req,res)=>{
+    try{
+        const departments=await Department.find();
+        return res.status(200).json({success:true,departments})
+    }catch(error){
+        return res.status(500).json({success:false,error:"get department server error"})
+    }
+}
+
 const addDepartment = async(req,res)=>{
     try{
         const {dept_name,description}=req.body;
@@ -13,4 +22,4 @@ const addDepartment = async(req,res)=>{
         return res.status(500).json({success:false,error:"add department server error"})
     }
 }
-export {addDepartment};
+export {addDepartment , getDepartments};
