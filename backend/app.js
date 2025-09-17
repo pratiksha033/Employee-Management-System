@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import userRouter from "./routes/userRouter.js";
+import departmentRouter from "./routes/department.js";
 import connectToDatabase from "./db/dbConnection.js";
 import { errorMiddleware } from "./middleware/error.js";
 
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/department", departmentRouter);
 
 // Error handling middleware
 app.use(errorMiddleware);
