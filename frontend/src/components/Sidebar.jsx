@@ -27,6 +27,14 @@ export default function Sidebar({ activePage, setActivePage, onLogout }) {
         >
           {isOpen ? "Dashboard" : ""}
         </button>
+        <button
+          onClick={() => setActivePage("employee")}
+          className={`p-3 text-left hover:bg-gray-700 ${
+            activePage === "employee" ? "bg-gray-700" : ""
+          }`}
+        >
+          {isOpen ? "Employee" : ""}
+        </button>
 
         <button
           onClick={() => setActivePage("department")}
@@ -61,7 +69,7 @@ export default function Sidebar({ activePage, setActivePage, onLogout }) {
           {isOpen ? "Profile" : ""}
         </button>
         <button
-          onClick={() => setActivePage("Settings")}
+          onClick={() => setActivePage("settings")}
           className={`p-3 text-left hover:bg-gray-700 ${
             activePage === "Settings" ? "bg-gray-700" : ""
           }`}

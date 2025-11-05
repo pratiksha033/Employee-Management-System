@@ -1,54 +1,171 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
+// Define the base URL for your department API
+const API_BASE_URL = "http://localhost:4000/api/v1/department";
+
+// Helper function to get the auth token from local storage
+const getAuthToken = () => {
+  return localStorage.getItem("authToken");
+};
 
 export default function DepartmentPage() {
   const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editDept, setEditDept] = useState(null); // track department being edited
+  const [isLoading, setIsLoading] = useState(false);
 
   const [newDept, setNewDept] = useState({
     name: "",
     description: "",
   });
 
+  // --- Fetch Departments ---
+  const fetchDepartments = async () => {
+    setIsLoading(true);
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        alert("You are not authenticated. Please log in.");
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch(API_BASE_URL, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Send token in header
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to fetch departments");
+      }
+
+      const data = await response.json();
+      setDepartments(data.departments || []); // Assuming backend returns { success: true, departments: [...] }
+    } catch (error) {
+      console.error("Fetch Departments Error:", error);
+      alert(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch departments on component mount
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
   // Filter departments
   const filteredDepartments = departments.filter((dep) =>
     dep.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Add new department
-  const handleAddDepartment = () => {
+  // --- Add New Department ---
+  const handleAddDepartment = async () => {
     if (!newDept.name.trim()) {
       alert("Department name is required!");
       return;
     }
 
-    if (departments.some((d) => d.name === newDept.name)) {
-      alert("Department already exists!");
-      return;
-    }
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newDept),
+      });
 
-    setDepartments([...departments, newDept]);
-    setNewDept({ name: "", description: "" });
-    setShowModal(false);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to add department");
+      }
+
+      alert(data.message || "Department added successfully!");
+      setDepartments([...departments, data.department]); // Add new dept from response
+      setNewDept({ name: "", description: "" });
+      setShowModal(false);
+    } catch (error) {
+      console.error("Add Department Error:", error);
+      alert(error.message);
+    }
   };
 
-  // Update department
-  const handleUpdateDepartment = () => {
+  // --- Update Department ---
+  const handleUpdateDepartment = async () => {
+    if (!editDept || !editDept._id) return;
+
     if (!editDept.name.trim()) {
       alert("Department name is required!");
       return;
     }
 
-    setDepartments(
-      departments.map((d) => (d.name === editDept.oldName ? editDept : d))
-    );
-    setEditDept(null);
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/update/${editDept._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editDept.name,
+          description: editDept.description,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update department");
+      }
+
+      alert(data.message || "Department updated successfully!");
+      // Update the department in the local state
+      setDepartments(
+        departments.map((d) =>
+          d._id === editDept._id ? data.department : d
+        )
+      );
+      setEditDept(null);
+    } catch (error) {
+      console.error("Update Department Error:", error);
+      alert(error.message);
+    }
   };
 
-  // Delete department
-  const handleDelete = (name) => {
-    setDepartments(departments.filter((d) => d.name !== name));
+  // --- Delete Department ---
+  const handleDelete = async (id) => {
+    // Replaced confirm with a simple window.confirm for now
+    if (!window.confirm("Are you sure you want to delete this department?")) {
+      return;
+    }
+
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/delete/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete department");
+      }
+
+      alert(data.message || "Department deleted successfully!");
+      setDepartments(departments.filter((d) => d._id !== id));
+    } catch (error) {
+      console.error("Delete Department Error:", error);
+      alert(error.message);
+    }
   };
 
   return (
@@ -74,7 +191,9 @@ export default function DepartmentPage() {
       </div>
 
       {/* Department List */}
-      {filteredDepartments.length === 0 ? (
+      {isLoading ? (
+        <p>Loading departments...</p>
+      ) : filteredDepartments.length === 0 ? (
         <p className="text-gray-500">There are no records to display</p>
       ) : (
         <table className="w-full border border-gray-300">
@@ -86,21 +205,20 @@ export default function DepartmentPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredDepartments.map((dep, idx) => (
-              <tr key={idx}>
+            {filteredDepartments.map((dep) => (
+              <tr key={dep._id}>
+                {/* Use dep._id as the key */}
                 <td className="border px-4 py-2">{dep.name}</td>
                 <td className="border px-4 py-2">{dep.description}</td>
                 <td className="border px-4 py-2 text-center space-x-2">
                   <button
-                    onClick={() =>
-                      setEditDept({ ...dep, oldName: dep.name })
-                    }
+                    onClick={() => setEditDept({ ...dep })} // Store the whole dept object for editing
                     className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded"
                   >
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(dep.name)}
+                    onClick={() => handleDelete(dep._id)} // Pass dep._id to delete
                     className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
                   >
                     Delete
@@ -139,7 +257,10 @@ export default function DepartmentPage() {
 
             <div className="flex justify-end gap-2">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setNewDept({ name: "", description: "" }); // Reset form on cancel
+                }}
                 className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
               >
                 Cancel

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import DashboardPage from "../pages/DashboardPage";
 import DepartmentPage from "../pages/DepartmentPage";
+import SettingsPage from "../pages/SettingsPage";
 
 export default function DashboardLayout({ user, onLogout }) {
   const [activePage, setActivePage] = useState("dashboard");
@@ -12,6 +13,8 @@ export default function DashboardLayout({ user, onLogout }) {
         return <DashboardPage user={user} />;
       case "department":
         return <DepartmentPage />;
+      case "settings":
+            return <SettingsPage />;
       default:
         return <DashboardPage user={user} />;
     }
