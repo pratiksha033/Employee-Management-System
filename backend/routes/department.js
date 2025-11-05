@@ -1,15 +1,21 @@
 import express from "express";
-// import {isAuthenticated} from "../middleware/authMiddleware.js";
-import { addDepartment, getDepartments, editDepartment, updateDepartment, deleteDepartment } from "../controllers/departmentController.js";
+import {
+  addDepartment,
+  getAllDepartments,
+  updateDepartment,
+  deleteDepartment,
+} from "../controllers/departmentController.js";
 import { isAuthenticated } from "../middleware/authMiddleware.js";
 
-
 const router = express.Router();
-// router.get("/",isAuthenticated,getDepartments);
-router.get("/",getDepartments);
-router.post("/add",addDepartment);
-router.get("/:id",editDepartment);
-router.put("/:id",updateDepartment);
-router.delete("/:id",deleteDepartment);
 
-export default router
+// All routes are protected
+router.use(isAuthenticated);
+
+// Department CRUD routes
+router.post("/add", addDepartment);
+router.get("/", getAllDepartments); // GET all departments
+router.put("/update/:id", updateDepartment);
+router.delete("/delete/:id", deleteDepartment);
+
+export default router;

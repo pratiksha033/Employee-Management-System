@@ -1,0 +1,5 @@
+- [x] Add import './App.css' in main.jsx
+- [x] Downgrade Tailwind to v3
+- [x] Update App.css to @tailwind directives
+- [x] Update PostCSS config to include tailwindcss
+- [ ] Test by running npm run dev in frontend and check if Tailwind classes are applied
