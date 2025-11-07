@@ -1,12 +1,11 @@
 import express from "express";
 import { getDashboardStats } from "../controllers/dashboardController.js";
-import { isAuthenticated, isAdmin } from "../middleware/authMiddleware.js";
+import { isAuthenticated } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// All dashboard routes are for admins
+// Allow all authenticated users (admin + employees)
 router.use(isAuthenticated);
-router.use(isAdmin);
 
 router.get("/stats", getDashboardStats);
 

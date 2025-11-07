@@ -3,7 +3,6 @@ import {
   Users,
   Building2,
   IndianRupee,
-  FileText,
   Clock,
   CheckCircle,
   XCircle,
@@ -12,15 +11,11 @@ import {
 } from "lucide-react";
 
 // --- Helper: Get Auth Token ---
-const getAuthToken = () => {
-  return localStorage.getItem("authToken");
-};
+const getAuthToken = () => localStorage.getItem("authToken");
 
 // --- Helper: Format Currency in INR ---
 const formatCurrency = (amount) => {
-  if (amount === undefined || amount === null) {
-    return "N/A";
-  }
+  if (amount === undefined || amount === null) return "N/A";
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -51,27 +46,20 @@ const AdminDashboard = ({ user }) => {
   useEffect(() => {
     const fetchStats = async () => {
       setIsLoading(true);
-      setError(null);
       try {
         const token = getAuthToken();
-        const response = await fetch(
-          "http://localhost:4000/api/v1/dashboard/stats",
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await fetch("http://localhost:4000/api/v1/dashboard/stats", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch stats");
-        }
+        if (!response.ok) throw new Error(data.message || "Failed to fetch stats");
         setStats(data.stats);
       } catch (err) {
         setError(err.message);
-        console.error("Fetch Stats Error:", err.message);
       } finally {
         setIsLoading(false);
       }
@@ -80,15 +68,14 @@ const AdminDashboard = ({ user }) => {
     fetchStats();
   }, []);
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="flex justify-center items-center h-64">
         <Clock size={48} className="text-teal-600 animate-spin" />
       </div>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <div className="rounded-lg bg-red-100 p-6 text-red-700">
         <h3 className="text-xl font-semibold flex items-center">
@@ -97,17 +84,12 @@ const AdminDashboard = ({ user }) => {
         <p>{error}</p>
       </div>
     );
-  }
-
-  if (!stats) {
-    return <p>No stats available.</p>;
-  }
 
   return (
     <div className="p-6 space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
 
-      {/* Dashboard Overview */}
+      {/* Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
           title="Total Employees"
@@ -124,7 +106,7 @@ const AdminDashboard = ({ user }) => {
         
       </div>
 
-      {/* Leave Details */}
+      {/* Leave Overview */}
       <h2 className="text-xl font-semibold text-gray-700">Leave Overview</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
@@ -147,12 +129,12 @@ const AdminDashboard = ({ user }) => {
         />
       </div>
 
-      {/* Department Breakdown */}
+      {/* Employees per Department */}
       <h2 className="text-xl font-semibold text-gray-700">
         Employees per Department
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.departmentCounts.length > 0 ? (
+        {stats.departmentCounts?.length ? (
           stats.departmentCounts.map((dept) => (
             <div
               key={dept.departmentName}
@@ -160,9 +142,7 @@ const AdminDashboard = ({ user }) => {
             >
               <div>
                 <p className="text-sm text-gray-600">{dept.departmentName}</p>
-                <h3 className="text-2xl font-bold text-gray-800">
-                  {dept.count}
-                </h3>
+                <h3 className="text-2xl font-bold text-gray-800">{dept.count}</h3>
               </div>
               <UserCheck size={32} className="text-teal-500" />
             </div>
@@ -179,16 +159,87 @@ const AdminDashboard = ({ user }) => {
 
 // --- Employee Dashboard View ---
 const EmployeeDashboard = ({ user }) => {
+  const [stats, setStats] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setIsLoading(true);
+      try {
+        const token = getAuthToken();
+        const response = await fetch("http://localhost:4000/api/v1/dashboard/stats", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Failed to fetch stats");
+        setStats(data.stats);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  if (isLoading)
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Clock size={48} className="text-teal-600 animate-spin" />
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="rounded-lg bg-red-100 p-6 text-red-700">
+        <h3 className="text-xl font-semibold flex items-center">
+          <ServerCrash size={24} className="mr-2" /> Error
+        </h3>
+        <p>{error}</p>
+      </div>
+    );
+
   return (
-    <div className="p-6">
-      <div className="bg-white p-8 rounded-lg shadow-md">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">
-          Welcome, {user?.name || "Employee"}!
-        </h2>
-        <p className="text-gray-600">
-          This is your dashboard. Use the sidebar to navigate to your profile,
-          apply for leave, or view your salary.
-        </p>
+    <div className="p-6 space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800">
+        Welcome back, {user?.name || "Employee"} 👋
+      </h2>
+
+      {/* Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard
+          title="Total Employees"
+          value={stats.totalEmployees}
+          icon={<Users size={36} />}
+          colorClass="bg-teal-600"
+        />
+        <StatCard
+          title="Departments"
+          value={stats.totalDepartments}
+          icon={<Building2 size={36} />}
+          colorClass="bg-blue-600"
+        />
+        
+      </div>
+
+      {/* Department Breakdown */}
+      <h2 className="text-xxl font-semibold text-gray-700">
+        Employees per Department
+      </h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {stats.departmentCounts?.map((dept) => (
+          <div
+            key={dept.departmentName}
+            className="rounded-lg border p-4 text-center shadow-sm bg-white"
+          >
+            <p className="text-sm text-gray-500">{dept.departmentName}</p>
+            <h3 className="text-xl font-bold text-gray-800">{dept.count}</h3>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -197,8 +248,6 @@ const EmployeeDashboard = ({ user }) => {
 // --- Main Page Component ---
 export default function DashboardPage({ user }) {
   if (!user) return <p>Loading...</p>;
-
-  // Render different dashboards based on user role
   return user.role === "admin" ? (
     <AdminDashboard user={user} />
   ) : (
