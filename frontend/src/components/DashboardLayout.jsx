@@ -3,6 +3,10 @@ import Sidebar from "./Sidebar";
 import DashboardPage from "../pages/DashboardPage";
 import DepartmentPage from "../pages/DepartmentPage";
 import SettingsPage from "../pages/SettingsPage";
+import EmployeePage from "../pages/EmployeePage";
+import LeavePage from "../pages/LeavePage";
+import SalaryPage from "../pages/SalaryPage";
+
 
 export default function DashboardLayout({ user, onLogout }) {
   const [activePage, setActivePage] = useState("dashboard");
@@ -14,7 +18,21 @@ export default function DashboardLayout({ user, onLogout }) {
       case "department":
         return <DepartmentPage />;
       case "settings":
-            return <SettingsPage />;
+        return <SettingsPage user ={user}/>;
+      case "employee":
+        // ✅ Allow Employee page only if user is admin
+        return user?.role === "admin" ? (
+          <EmployeePage user={user}  />
+        ) : (
+          <div className="text-center text-red-500 font-semibold mt-10">
+            ❌ Access Denied — Only Admins can view this page
+          </div>
+        );
+      case "leave":
+        return <LeavePage user ={user}/>;
+      case "salary":
+        return <SalaryPage user ={user}/>;
+      
       default:
         return <DashboardPage user={user} />;
     }
@@ -22,11 +40,12 @@ export default function DashboardLayout({ user, onLogout }) {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
+      {/* Sidebar — ✅ Pass user prop */}
       <Sidebar
         activePage={activePage}
         setActivePage={setActivePage}
         onLogout={onLogout}
+        user={user} // ✅ Added this
       />
 
       {/* Content */}
