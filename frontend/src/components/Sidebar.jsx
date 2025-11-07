@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 
-export default function Sidebar({ activePage, setActivePage, onLogout }) {
+export default function Sidebar({ activePage, setActivePage, onLogout, user }) {
   const [isOpen, setIsOpen] = useState(true);
+  const role = user?.role || "employee"; // default role
 
   return (
     <div
@@ -27,14 +28,18 @@ export default function Sidebar({ activePage, setActivePage, onLogout }) {
         >
           {isOpen ? "Dashboard" : ""}
         </button>
-        <button
-          onClick={() => setActivePage("employee")}
-          className={`p-3 text-left hover:bg-gray-700 ${
-            activePage === "employee" ? "bg-gray-700" : ""
-          }`}
-        >
-          {isOpen ? "Employee" : ""}
-        </button>
+
+        {/* 🟩 Show Employee Page ONLY for Admin */}
+        {role === "admin" && (
+          <button
+            onClick={() => setActivePage("employee")}
+            className={`p-3 text-left hover:bg-gray-700 ${
+              activePage === "employee" ? "bg-gray-700" : ""
+            }`}
+          >
+            {isOpen ? "Employee" : ""}
+          </button>
+        )}
 
         <button
           onClick={() => setActivePage("department")}
@@ -44,34 +49,31 @@ export default function Sidebar({ activePage, setActivePage, onLogout }) {
         >
           {isOpen ? "Department" : ""}
         </button>
+
         <button
-          onClick={() => setActivePage("Leave")}
+          onClick={() => setActivePage("leave")}
           className={`p-3 text-left hover:bg-gray-700 ${
-            activePage === "Leave" ? "bg-gray-700" : ""
+            activePage === "leave" ? "bg-gray-700" : ""
           }`}
         >
           {isOpen ? "Leave" : ""}
         </button>
+
         <button
-          onClick={() => setActivePage("Salary")}
+          onClick={() => setActivePage("salary")}
           className={`p-3 text-left hover:bg-gray-700 ${
-            activePage === "Salary" ? "bg-gray-700" : ""
+            activePage === "salary" ? "bg-gray-700" : ""
           }`}
         >
           {isOpen ? "Salary" : ""}
         </button>
-        <button
-          onClick={() => setActivePage("Profile")}
-          className={`p-3 text-left hover:bg-gray-700 ${
-            activePage === "Profile" ? "bg-gray-700" : ""
-          }`}
-        >
-          {isOpen ? "Profile" : ""}
-        </button>
+
+        
+
         <button
           onClick={() => setActivePage("settings")}
           className={`p-3 text-left hover:bg-gray-700 ${
-            activePage === "Settings" ? "bg-gray-700" : ""
+            activePage === "settings" ? "bg-gray-700" : ""
           }`}
         >
           {isOpen ? "Settings" : ""}

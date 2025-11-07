@@ -24,10 +24,10 @@ export const isAuthenticated = catchAsyncError(async (req, res, next) => {
 
   try {
     // Verify the token using JWT_SECRET from .env
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); 
-    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
     // Attach user to request object
-    req.user = await User.findById(decoded.id); 
+    req.user = await User.findById(decoded.id);
 
     if (!req.user) {
          return next(new ErrorHandler("User not found.", 404));
@@ -44,4 +44,11 @@ export const isAuthenticated = catchAsyncError(async (req, res, next) => {
     // Forward other errors
     return next(error);
   }
+});
+
+export const isAdmin = catchAsyncError(async (req, res, next) => {
+  if (req.user.role !== "admin") {
+    return next(new ErrorHandler("Access denied. Admin role required.", 403));
+  }
+  next();
 });

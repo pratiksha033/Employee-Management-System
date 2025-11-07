@@ -4,12 +4,12 @@ import jwt from "jsonwebtoken";
 import { catchAsyncError } from "../middleware/catchAsyncError.js";
 import ErrorHandler from "../middleware/error.js";
 
-// Register user
+// ✅ REGISTER USER
 export const register = catchAsyncError(async (req, res, next) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body; // ✅ include role
 
   if (!name || !email || !password) {
-    return next(new ErrorHandler("Please fill all fields", 400));
+    return next(new ErrorHandler("Please fill all required fields", 400));
   }
 
   const existingUser = await User.findOne({ email });
@@ -19,13 +19,15 @@ export const register = catchAsyncError(async (req, res, next) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  // ✅ include role when creating user
   const user = await User.create({
     name,
     email,
     password: hashedPassword,
+    role: role || "employee", // defaults to employee if role not sent
   });
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || "7d",
   });
 
@@ -37,11 +39,12 @@ export const register = catchAsyncError(async (req, res, next) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role, // ✅ send role in response too
     },
   });
 });
 
-// Login user
+// ✅ LOGIN USER
 export const login = catchAsyncError(async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -59,7 +62,7 @@ export const login = catchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler("Invalid email or password", 400));
   }
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || "7d",
   });
 
@@ -71,11 +74,12 @@ export const login = catchAsyncError(async (req, res, next) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role, // ✅ include role here too
     },
   });
 });
 
-// Logout user
+// ✅ LOGOUT USER
 export const logout = catchAsyncError(async (req, res, next) => {
   res.status(200).json({
     success: true,
@@ -83,7 +87,7 @@ export const logout = catchAsyncError(async (req, res, next) => {
   });
 });
 
-// Get user profile
+// ✅ GET USER PROFILE
 export const getUserProfile = catchAsyncError(async (req, res, next) => {
   const user = await User.findById(req.user.id);
 
@@ -93,6 +97,7 @@ export const getUserProfile = catchAsyncError(async (req, res, next) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role, // ✅ show role here too
     },
   });
 });

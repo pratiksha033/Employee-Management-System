@@ -11,8 +11,9 @@ export default function App() {
     useEffect(() => {
         const token = localStorage.getItem('authToken');
         const userName = localStorage.getItem('userName');
+        const userRole = localStorage.getItem('userRole'); 
         if (token && userName) {
-            setUser({ name: userName });
+            setUser({ name: userName, role: userRole });
             setView('dashboard');
         }
     }, []);
@@ -35,7 +36,8 @@ export default function App() {
             // Store token and user data from backend response
             localStorage.setItem('authToken', data.token);
             localStorage.setItem('userName', data.user.name);
-            setUser({ name: data.user.name, email: data.user.email });
+            localStorage.setItem('userRole', data.user.role);
+            setUser({ name: data.user.name, email: data.user.email , role: data.user.role});
             setView('dashboard');
             alert(data.message);
         } catch (error) {

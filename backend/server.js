@@ -1,6 +1,6 @@
-import User from './models/User.js'
+import User from './models/userSchema.js'
 import bcrypt from 'bcrypt'
-import connectToDatabase from './db/db.js'
+import connectToDatabase from './db/dbConnection.js'
 import dotenv from 'dotenv';
 dotenv.config(); // load environment variables
 
