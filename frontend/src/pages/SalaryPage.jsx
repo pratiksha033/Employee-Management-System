@@ -11,21 +11,22 @@ const getAuthToken = () => {
 // Helper to format date
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
-  return new Date(dateString).toLocaleDateString("en-US", {
+  return new Date(dateString).toLocaleDateString("en-IN", {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
 };
 
-// Helper to format currency
+// ✅ Helper to format currency in INR
 const formatCurrency = (amount) => {
   if (amount === undefined || amount === null) {
-      return "N/A";
+    return "N/A";
   }
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD",
+    currency: "INR",
+    maximumFractionDigits: 2,
   }).format(amount);
 };
 
@@ -43,13 +44,13 @@ const AdminSalaryView = () => {
     payDate: "",
   });
 
-  // 👇 NEW STATE to show salaries added
   const [salaries, setSalaries] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const token = getAuthToken();
- // ✅ Define fetchData outside useEffect so it can be reused
-const fetchData = async () => {
+
+  // ✅ Define fetchData outside useEffect so it can be reused
+  const fetchData = async () => {
     const token = getAuthToken();
     try {
       // ✅ Fetch Departments
@@ -59,7 +60,7 @@ const fetchData = async () => {
       const deptData = await deptResponse.json();
       if (deptResponse.ok) setDepartments(deptData.departments || []);
       else console.error("Failed to fetch departments:", deptData.message);
-  
+
       // ✅ Fetch Employees
       const empResponse = await fetch(`${API_BASE_URL}/employee/all`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -67,7 +68,7 @@ const fetchData = async () => {
       const empData = await empResponse.json();
       if (empResponse.ok) setEmployees(empData.employees || []);
       else console.error("Failed to fetch employees:", empData.message);
-  
+
       // ✅ Fetch All Salaries (for admin view)
       const salaryResponse = await fetch(`${API_BASE_URL}/salary/all`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -80,17 +81,15 @@ const fetchData = async () => {
       console.error("Failed to fetch data:", error);
     }
   };
-  
+
   // ✅ Fetch data when page first loads
   useEffect(() => {
     fetchData();
   }, []);
-  
-  
+
   // Filter employees when department changes
   useEffect(() => {
     if (selectedDepartment) {
-      // Ensure we are comparing department IDs
       setFilteredEmployees(
         employees.filter((emp) => emp.department?._id === selectedDepartment)
       );
@@ -137,14 +136,11 @@ const fetchData = async () => {
         throw new Error(data.message || "Failed to add salary");
       }
 
-      console.log("Salary added successfully!");
-
-      
+      console.log("✅ Salary added successfully!");
 
       // 👇 Immediately update salary list without reloading
       setSalaries((prev) => [...prev, data.salary]);
-
-      await fetchData(); // re-fetch all data after adding new salary
+      await fetchData(); // Re-fetch data to update UI
 
       // Reset form
       setFormData({
@@ -160,8 +156,8 @@ const fetchData = async () => {
     }
   };
 
-   // 👇 Columns for admin salary list
-   const columns = [
+  // 👇 Columns for admin salary list
+  const columns = [
     {
       name: "Employee",
       selector: (row) => row.employeeId?.name || "N/A",
@@ -223,6 +219,7 @@ const fetchData = async () => {
               ))}
             </select>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Employee
@@ -242,6 +239,7 @@ const fetchData = async () => {
               ))}
             </select>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Basic Salary
@@ -256,6 +254,7 @@ const fetchData = async () => {
               required
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Allowances
@@ -269,6 +268,7 @@ const fetchData = async () => {
               className="w-full border-gray-300 rounded-lg shadow-sm focus:border-teal-500 focus:ring-teal-500"
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Deductions
@@ -282,6 +282,7 @@ const fetchData = async () => {
               className="w-full border-gray-300 rounded-lg shadow-sm focus:border-teal-500 focus:ring-teal-500"
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Pay Date
@@ -296,6 +297,7 @@ const fetchData = async () => {
             />
           </div>
         </div>
+
         <button
           type="submit"
           className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg"
@@ -304,8 +306,7 @@ const fetchData = async () => {
         </button>
       </form>
 
-
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      <div className="bg-white shadow-md rounded-lg overflow-hidden mt-8">
         <h3 className="text-xl font-semibold p-4 border-b">All Salaries</h3>
         <DataTable
           columns={columns}
@@ -316,11 +317,7 @@ const fetchData = async () => {
           responsive
         />
       </div>
-
-
     </div>
-
-    
   );
 };
 
@@ -381,7 +378,7 @@ const EmployeeSalaryView = () => {
       selector: (row) => formatCurrency(row.totalSalary),
       sortable: true,
       right: true,
-      style: { fontWeight: 'bold' },
+      style: { fontWeight: "bold" },
     },
   ];
 
