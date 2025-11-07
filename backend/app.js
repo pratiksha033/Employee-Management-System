@@ -7,9 +7,10 @@ import userRouter from "./routes/userRouter.js";
 import departmentRouter from "./routes/departmentRouter.js";
 import employeeRouter from "./routes/employeeRouter.js";
 import salaryRouter from "./routes/salaryRouter.js"; // <-- ADDED
+import leaveRouter from "./routes/leaveRoutes.js";
+import dashboardRouter from "./routes/dashboardRouter.js";
 import connectToDatabase from "./db/dbConnection.js";
 import { errorMiddleware } from "./middleware/error.js";
-import leaveRoutes from "./routes/leaveRoutes.js";
 
 // Load environment variables
 dotenv.config({ path: "./.env" });
@@ -32,7 +33,8 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/department", departmentRouter);
 app.use("/api/v1/employee", employeeRouter);
 app.use("/api/v1/salary", salaryRouter); // <-- ADDED
-app.use("/api/v1/leave", leaveRoutes);
+app.use("/api/v1/leave", leaveRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
 // Error handling middleware
 app.use(errorMiddleware);
 
