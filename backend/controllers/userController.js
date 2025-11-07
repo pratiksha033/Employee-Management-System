@@ -101,3 +101,74 @@ export const getUserProfile = catchAsyncError(async (req, res, next) => {
     },
   });
 });
+// --- NEW: Update User Profile (Name & Email) ---
+export const updateProfile = catchAsyncError(async (req, res, next) => {
+  const { name, email } = req.body;
+  
+  if (!name || !email) {
+    return next(new ErrorHandler("Please provide name and email", 400));
+  }
+
+  const user = await User.findById(req.user.id);
+
+  // Check if email is being changed and if the new email is already taken
+  if (email && email !== user.email) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return next(new ErrorHandler("Email already in use", 400));
+    }
+    user.email = email;
+  }
+
+  user.name = name;
+  await user.save();
+
+  // Send back updated, non-sensitive user info
+  res.status(200).json({
+    success: true,
+    message: "Profile updated successfully.",
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      dob: user.dob,
+      department: user.department,
+    },
+  });
+});
+
+// --- NEW: Change Password ---
+export const changePassword = catchAsyncError(async (req, res, next) => {
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    return next(new ErrorHandler("Please fill all password fields", 400));
+  }
+
+  if (newPassword !== confirmPassword) {
+    return next(new ErrorHandler("New passwords do not match", 400));
+  }
+
+  if (newPassword.length < 6) {
+     return next(new ErrorHandler("Password must be at least 6 characters", 400));
+  }
+
+  // Find user and explicitly select the password field
+  const user = await User.findById(req.user.id).select("+password");
+
+  // Check if current password is correct
+  const isPasswordMatched = await bcrypt.compare(currentPassword, user.password);
+  if (!isPasswordMatched) {
+    return next(new ErrorHandler("Incorrect current password", 400));
+  }
+
+  // Hash and save new password
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Password changed successfully.",
+  });
+});
