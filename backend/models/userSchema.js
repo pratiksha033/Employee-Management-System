@@ -17,28 +17,22 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, "Password is required"],
     minlength: [6, "Password must be at least 6 characters"],
-    select: false, // <-- Hides password from default queries
+    select: false,
   },
   role: {
     type: String,
     enum: ["employee", "admin"],
     default: "employee",
   },
-  // --- NEW FIELDS for Employee Page ---
-  dob: {
-    type: Date,
-  },
+  dob: Date,
   department: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Department", // This links to your Department model
+    ref: "Department",
   },
-  // --- END NEW FIELDS ---
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-const User = mongoose.models.User || mongoose.model("User", userSchema);
-
-export { User };
+export const User = mongoose.models.User || mongoose.model("User", userSchema);

@@ -40,7 +40,7 @@ export default function LoginView({ onShowSignup, onLogin }) {
             <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
                 <h2 className="text-3xl font-bold text-gray-800 mb-2">Hello! employees</h2>
                 <p className="text-gray-600 mb-8">
-                    Welcome back! Please enter your details to log in.
+                    Welcome backklll! Please enter your details to log in.
                 </p>
 
                 <form onSubmit={handleSubmit}>

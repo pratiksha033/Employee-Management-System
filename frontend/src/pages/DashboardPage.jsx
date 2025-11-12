@@ -44,28 +44,24 @@ const AdminDashboard = ({ user }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      setIsLoading(true);
-      try {
-        const token = getAuthToken();
-        const response = await fetch("http://localhost:4000/api/v1/dashboard/stats", {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+    // ✅ TEMP FIX: Use dummy data to check frontend rendering
+    const timer = setTimeout(() => {
+      setStats({
+        totalEmployees: 8,
+        totalDepartments: 3,
+        pendingLeaves: 2,
+        approvedLeaves: 4,
+        rejectedLeaves: 1,
+        departmentCounts: [
+          { departmentName: "HR", count: 2 },
+          { departmentName: "Tech", count: 3 },
+          { departmentName: "Finance", count: 1 },
+        ],
+      });
+      setIsLoading(false);
+    }, 800);
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || "Failed to fetch stats");
-        setStats(data.stats);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStats();
+    return () => clearTimeout(timer);
   }, []);
 
   if (isLoading)
@@ -103,7 +99,6 @@ const AdminDashboard = ({ user }) => {
           icon={<Building2 size={36} />}
           colorClass="bg-blue-600"
         />
-        
       </div>
 
       {/* Leave Overview */}
@@ -164,26 +159,21 @@ const EmployeeDashboard = ({ user }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      setIsLoading(true);
-      try {
-        const token = getAuthToken();
-        const response = await fetch("http://localhost:4000/api/v1/dashboard/stats", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || "Failed to fetch stats");
-        setStats(data.stats);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // ✅ TEMP FIX: Dummy data for employee view
+    const timer = setTimeout(() => {
+      setStats({
+        totalEmployees: 8,
+        totalDepartments: 3,
+        departmentCounts: [
+          { departmentName: "HR", count: 2 },
+          { departmentName: "Tech", count: 3 },
+          { departmentName: "Finance", count: 1 },
+        ],
+      });
+      setIsLoading(false);
+    }, 800);
 
-    fetchStats();
+    return () => clearTimeout(timer);
   }, []);
 
   if (isLoading)
@@ -223,11 +213,10 @@ const EmployeeDashboard = ({ user }) => {
           icon={<Building2 size={36} />}
           colorClass="bg-blue-600"
         />
-        
       </div>
 
       {/* Department Breakdown */}
-      <h2 className="text-xxl font-semibold text-gray-700">
+      <h2 className="text-xl font-semibold text-gray-700">
         Employees per Department
       </h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

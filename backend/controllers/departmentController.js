@@ -1,4 +1,4 @@
-import { Department } from "../models/DepartmentSchema.js";
+import { Department } from "../models/departmentSchema.js";
 import { catchAsyncError } from "../middleware/catchAsyncError.js";
 import ErrorHandler from "../middleware/error.js";
 
@@ -11,14 +11,14 @@ export const addDepartment = catchAsyncError(async (req, res, next) => {
   }
 
   // Check if department already exists
-  const existingDepartment = await Department.findOne({ name });
+  const existingDepartment = await Department.findOne({ name: name.trim() });
   if (existingDepartment) {
     return next(new ErrorHandler("Department already exists", 400));
   }
 
   const department = await Department.create({
-    name,
-    description,
+    name: name.trim(),
+    description: description?.trim() || "",
   });
 
   res.status(201).json({
@@ -30,7 +30,7 @@ export const addDepartment = catchAsyncError(async (req, res, next) => {
 
 // --- Get All Departments ---
 export const getAllDepartments = catchAsyncError(async (req, res, next) => {
-  const departments = await Department.find();
+  const departments = await Department.find().sort({ createdAt: -1 });
 
   res.status(200).json({
     success: true,
@@ -43,23 +43,21 @@ export const updateDepartment = catchAsyncError(async (req, res, next) => {
   const { id } = req.params;
   const { name, description } = req.body;
 
-  let department = await Department.findById(id);
-
+  const department = await Department.findById(id);
   if (!department) {
     return next(new ErrorHandler("Department not found", 404));
   }
 
-  // Check if new name already exists (and it's not the same department)
-  if (name && name !== department.name) {
-    const existingDepartment = await Department.findOne({ name });
+  if (name && name.trim() !== department.name) {
+    const existingDepartment = await Department.findOne({ name: name.trim() });
     if (existingDepartment) {
       return next(new ErrorHandler("Department name already in use", 400));
     }
-    department.name = name;
+    department.name = name.trim();
   }
-  
+
   if (description !== undefined) {
-     department.description = description;
+    department.description = description.trim();
   }
 
   await department.save();
@@ -76,7 +74,6 @@ export const deleteDepartment = catchAsyncError(async (req, res, next) => {
   const { id } = req.params;
 
   const department = await Department.findById(id);
-
   if (!department) {
     return next(new ErrorHandler("Department not found", 404));
   }

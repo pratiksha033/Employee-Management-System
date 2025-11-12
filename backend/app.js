@@ -11,6 +11,9 @@ import leaveRouter from "./routes/leaveRoutes.js";
 import dashboardRouter from "./routes/dashboardRouter.js";
 import connectToDatabase from "./db/dbConnection.js";
 import { errorMiddleware } from "./middleware/error.js";
+import attendanceRouter from "./routes/attendanceRouter.js";
+import recruitmentRoutes from "./routes/recruitmentRoutes.js";
+import onboardingRoutes from "./routes/onboardingRoutes.js";
 
 // Load environment variables
 dotenv.config({ path: "./.env" });
@@ -35,6 +38,10 @@ app.use("/api/v1/employee", employeeRouter);
 app.use("/api/v1/salary", salaryRouter); // <-- ADDED
 app.use("/api/v1/leave", leaveRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
+app.use("/api/v1/attendance", attendanceRouter);
+app.use("/api/v1/recruitment", recruitmentRoutes);
+app.use("/api/v1/onboarding", onboardingRoutes);
+
 // Error handling middleware
 app.use(errorMiddleware);
 
