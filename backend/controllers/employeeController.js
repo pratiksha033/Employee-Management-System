@@ -1,128 +1,124 @@
+import { Employee } from "../models/employeeSchema.js";
 import { User } from "../models/userSchema.js";
-import { catchAsyncError } from "../middleware/catchAsyncError.js";
-import ErrorHandler from "../middleware/error.js";
 import bcrypt from "bcrypt";
 
-// --- Admin: Add a new Employee ---
-export const addEmployee = catchAsyncError(async (req, res, next) => {
-  const { name, email, password, dob, department } = req.body;
+// ➕ Add Employee (Admin Only)
+export const addEmployee = async (req, res) => {
+  try {
+    const { name, email, password, department, position, salary } = req.body;
 
-  if (!name || !email || !password || !dob || !department) {
-    return next(new ErrorHandler("Please fill all fields", 400));
-  }
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide name, email, and password",
+      });
+    }
 
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    return next(new ErrorHandler("Email already exists", 400));
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const employee = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    dob,
-    department,
-    role: "employee", // Hardcode role as 'employee'
-  });
-
-  res.status(201).json({
-    success: true,
-    message: "Employee added successfully.",
-    employee,
-  });
-});
-
-// --- Admin: Get All Employees ---
-export const getAllEmployees = catchAsyncError(async (req, res, next) => {
-  const employees = await User.find({ role: "employee" }).populate(
-    "department",
-    "name"
-  ); // Populate department name
-
-  res.status(200).json({
-    success: true,
-    employees,
-  });
-});
-
-// --- Admin: Get Single Employee ---
-export const getEmployeeById = catchAsyncError(async (req, res, next) => {
-  const employee = await User.findById(req.params.id).populate(
-    "department",
-    "name"
-  );
-
-  if (!employee) {
-    return next(new ErrorHandler("Employee not found", 404));
-  }
-  if (employee.role !== "employee") {
-    return next(new ErrorHandler("User is not an employee", 404));
-  }
-
-  res.status(200).json({
-    success: true,
-    employee,
-  });
-});
-
-// --- Admin: Update Employee ---
-export const updateEmployee = catchAsyncError(async (req, res, next) => {
-  const { name, email, dob, department, password } = req.body;
-
-  let employee = await User.findById(req.params.id);
-
-  if (!employee) {
-    return next(new ErrorHandler("Employee not found", 404));
-  }
-
-  // Check if email is being updated and if it already exists
-  if (email && email !== employee.email) {
+    // Check if employee/user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return next(new ErrorHandler("Email already in use", 400));
+      return res.status(400).json({
+        success: false,
+        message: "Employee with this email already exists",
+      });
     }
-    employee.email = email;
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 1️⃣ Create login user account
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: "employee",
+    });
+
+    // 2️⃣ Create employee profile
+    const employee = await Employee.create({
+      name,
+      email,
+      department,
+      position,
+      salary,
+      user: user._id, // link employee to user account
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Employee added successfully and can now log in",
+      employee,
+    });
+  } catch (error) {
+    console.error("Error adding employee:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
+};
 
-  if (name) employee.name = name;
-  if (dob) employee.dob = dob;
-  if (department) employee.department = department;
-
-  // If a new password is provided, hash it
-  if (password) {
-    employee.password = await bcrypt.hash(password, 10);
+// 📋 Get All Employees
+export const getAllEmployees = async (req, res) => {
+  try {
+    const employees = await Employee.find().populate("user", "name email role");
+    res.status(200).json({ success: true, employees });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
-  
-  await employee.save();
+};
 
-  // Re-populate department after saving
-  employee = await User.findById(employee._id).populate("department", "name");
+// 🔍 Get Employee By ID
+export const getEmployeeById = async (req, res) => {
+  try {
+    const employee = await Employee.findById(req.params.id).populate("user", "name email role");
+    if (!employee)
+      return res.status(404).json({ success: false, message: "Employee not found" });
 
-  res.status(200).json({
-    success: true,
-    message: "Employee updated successfully.",
-    employee,
-  });
-});
-
-// --- Admin: Delete Employee ---
-export const deleteEmployee = catchAsyncError(async (req, res, next) => {
-  const employee = await User.findById(req.params.id);
-
-  if (!employee) {
-    return next(new ErrorHandler("Employee not found", 404));
+    res.status(200).json({ success: true, employee });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
+};
 
-  if (employee.role !== "employee") {
-    return next(new ErrorHandler("This user cannot be deleted from here", 400));
+// ✏️ Update Employee
+export const updateEmployee = async (req, res) => {
+  try {
+    const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!employee)
+      return res.status(404).json({ success: false, message: "Employee not found" });
+
+    // Optional: if email or name changed, sync with User model too
+    await User.findByIdAndUpdate(employee.user, {
+      name: employee.name,
+      email: employee.email,
+    });
+
+    res.status(200).json({ success: true, employee });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
+};
 
-  await employee.deleteOne();
+// ❌ Delete Employee
+export const deleteEmployee = async (req, res) => {
+  try {
+    const employee = await Employee.findById(req.params.id);
 
-  res.status(200).json({
-    success: true,
-    message: "Employee deleted successfully.",
-  });
-});
+    if (!employee)
+      return res.status(404).json({ success: false, message: "Employee not found" });
+
+    // Delete linked user account too
+    await User.findByIdAndDelete(employee.user);
+
+    await employee.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "Employee and associated user deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

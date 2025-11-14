@@ -9,7 +9,7 @@ import { isAuthenticated, isAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// 🟢 Allow logged-in users (even employees) to see department list
+// 🟢 Allow all authenticated users to see departments
 router.get("/", isAuthenticated, getAllDepartments);
 
 // 🔐 Only admins can manage departments
