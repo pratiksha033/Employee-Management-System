@@ -8,11 +8,11 @@ import {
   changePassword,
 } from "../controllers/userController.js";
 import { isAuthenticated } from "../middleware/authMiddleware.js";
+// import { isAuthorized } from "../middleware/authenticaterole.js";
 
 const router = express.Router();
 
 // Auth routes
-router.post("/register", register);
 router.post("/login", login);
 router.get("/logout", logout);
 

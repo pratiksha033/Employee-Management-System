@@ -10,11 +10,6 @@ import { isAuthenticated, isAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-/**
- * 🔒 All employee routes are:
- * - Protected (requires valid token)
- * - Admin-only (only admin can add/update/delete employees)
- */
 router.use(isAuthenticated);
 router.use(isAdmin);
 
