@@ -33,7 +33,7 @@ export const isAuthenticated = catchAsyncError(async (req, res, next) => {
 
     // 5️⃣ Attach user object to request
     req.user = await User.findById(decoded.id).select("-password");
-
+    req.user.role = decoded.role;
     if (!req.user) {
       return next(new ErrorHandler("User not found.", 404));
     }
