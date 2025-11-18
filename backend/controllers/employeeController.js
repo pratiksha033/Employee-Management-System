@@ -1,11 +1,12 @@
 import { Employee } from "../models/employeeSchema.js";
-import { User } from "../models/userSchema.js";
+import {User} from "../models/userSchema.js";
+import {Department} from "../models/departmentSchema.js";
 import bcrypt from "bcrypt";
 
 // ➕ Add Employee (Admin Only)
 export const addEmployee = async (req, res) => {
   try {
-    const { name, email, password, department, position, salary } = req.body;
+    const { name, email, password, department, position, salary, dob } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -20,6 +21,15 @@ export const addEmployee = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Employee with this email already exists",
+      });
+    }
+
+    // Validate department
+    const departmentExists = await Department.findById(department);
+    if (!departmentExists) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid department ID",
       });
     }
 
@@ -41,12 +51,13 @@ export const addEmployee = async (req, res) => {
       department,
       position,
       salary,
-      user: user._id, // link employee to user account
+      dob,
+      user: user._id,
     });
 
     res.status(201).json({
       success: true,
-      message: "Employee added successfully and can now log in",
+      message: "Employee added successfully",
       employee,
     });
   } catch (error) {
@@ -58,17 +69,27 @@ export const addEmployee = async (req, res) => {
 // 📋 Get All Employees
 export const getAllEmployees = async (req, res) => {
   try {
-    const employees = await Employee.find().populate("user", "name email role");
-    res.status(200).json({ success: true, employees });
+    const employees = await Employee.find().populate("department", "name");
+
+    return res.status(200).json({
+      success: true,
+      employees,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching employees",
+    });
   }
 };
 
 // 🔍 Get Employee By ID
 export const getEmployeeById = async (req, res) => {
   try {
-    const employee = await Employee.findById(req.params.id).populate("user", "name email role");
+    const employee = await Employee.findById(req.params.id)
+      .populate("user", "name email role")
+      .populate("department", "name");
+
     if (!employee)
       return res.status(404).json({ success: false, message: "Employee not found" });
 
@@ -81,6 +102,18 @@ export const getEmployeeById = async (req, res) => {
 // ✏️ Update Employee
 export const updateEmployee = async (req, res) => {
   try {
+    const { department } = req.body;
+
+    if (department) {
+      const dept = await Department.findById(department);
+      if (!dept) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid department ID",
+        });
+      }
+    }
+
     const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
@@ -89,7 +122,7 @@ export const updateEmployee = async (req, res) => {
     if (!employee)
       return res.status(404).json({ success: false, message: "Employee not found" });
 
-    // Optional: if email or name changed, sync with User model too
+    // Sync user model (optional)
     await User.findByIdAndUpdate(employee.user, {
       name: employee.name,
       email: employee.email,
@@ -109,14 +142,14 @@ export const deleteEmployee = async (req, res) => {
     if (!employee)
       return res.status(404).json({ success: false, message: "Employee not found" });
 
-    // Delete linked user account too
+    // Delete linked user
     await User.findByIdAndDelete(employee.user);
 
     await employee.deleteOne();
 
     res.status(200).json({
       success: true,
-      message: "Employee and associated user deleted successfully",
+      message: "Employee and user account deleted",
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

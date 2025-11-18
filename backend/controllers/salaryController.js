@@ -1,6 +1,7 @@
 import { Salary } from "../models/salaryModel.js";
 import { User } from "../models/userSchema.js";
 import { Department } from "../models/departmentSchema.js";
+import { Employee } from "../models/employeeSchema.js";
 import { catchAsyncError } from "../middleware/catchAsyncError.js";
 import ErrorHandler from "../middleware/error.js";
 
@@ -27,7 +28,7 @@ export const addSalary = catchAsyncError(async (req, res, next) => {
   }
 
   // Verify employee and department exist
-  const employee = await User.findById(employeeId);
+  const employee = await Employee.findById(employeeId);
   if (!employee) return next(new ErrorHandler("Employee not found.", 404));
 
   const department = await Department.findById(departmentId);
@@ -42,9 +43,10 @@ export const addSalary = catchAsyncError(async (req, res, next) => {
     deductions,
     payDate,
   });
-  console.log("✅ Salary Saved:", salary); 
 
-  // Populate employee and department for frontend display
+  console.log("✅ Salary Saved:", salary);
+
+  // Populate for frontend
   const populatedSalary = await Salary.findById(salary._id)
     .populate("employeeId", "name email")
     .populate("departmentId", "name");

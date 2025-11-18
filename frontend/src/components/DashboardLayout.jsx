@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import DashboardPage from "../pages/DashboardPage";
 import DepartmentPage from "../pages/DepartmentPage";
-import SettingsPage from "../pages/SettingsPage";
+import Settings from "../components/Settings";
 import EmployeePage from "../pages/EmployeePage";
 import LeavePage from "../pages/LeavePage";
 import SalaryPage from "../pages/SalaryPage";
@@ -11,14 +11,13 @@ import PayrollPage from "../pages/PayrollPage";
 import TaskPage from "../pages/TaskPage";
 import RecruitmentPage from "../pages/RecruitmentPage";
 import RewardPage from "../pages/RewardPage";
-import OnboardingPage from "../pages/OnboardingPage";
-import MyPayslips from "../pages/PaySlips";
-import PayrollManagement from "../pages/PayrollPage";
-
+import PaySlips from "../pages/PaySlips";
 
 export default function DashboardLayout({ user, onLogout }) {
   const [activePage, setActivePage] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // ------------ PAGE RENDERER ------------ //
   const renderPage = () => {
     switch (activePage) {
       case "dashboard":
@@ -26,93 +25,64 @@ export default function DashboardLayout({ user, onLogout }) {
       case "department":
         return <DepartmentPage />;
       case "settings":
-        return <SettingsPage user ={user}/>;
-        case "rewards":
-          return <RewardPage user ={user}/>;
+        return <Settings user={user} />;
+
+      // ------ ADMIN ONLY PAGES ------ //
       case "employee":
-        // ✅ Allow Employee page only if user is admin
-        return user?.role === "admin" ? (
-          <EmployeePage user={user}  />
-        ) : (
-          <div className="text-center text-red-500 font-semibold mt-10">
-            ❌ Access Denied — Only Admins can view this page
-          </div>
-        );
-        case "attendance":
-        // ✅ Allow Employee page only if user is admin
-        return user?.role === "admin" ? (
-          <AttendancePage user={user}  />
-        ) : (
-          <div className="text-center text-red-500 font-semibold mt-10">
-            ❌ Access Denied — Only Admins can view this page
-          </div>
-        );
+        return user?.role === "admin" ? <EmployeePage user={user} /> : <AccessDenied />;
+      case "attendance":
+        return user?.role === "admin" ? <AttendancePage user={user} /> : <AccessDenied />;
+      case "payroll":
+        return user?.role === "admin" ? <PayrollPage user={user} /> : <AccessDenied />;
+      case "payslips":
+        return user?.role === "admin" ? <PaySlips user={user} /> : <AccessDenied />;
+      case "recruitment":
+        return user?.role === "admin" ? <RecruitmentPage user={user} /> : <AccessDenied />;
+      case "onboarding":
+        return user?.role === "admin" ? <OnboardingPage user={user} /> : <AccessDenied />;
 
-        case "payroll":
-          // ✅ Allow Employee page only if user is admin
-          return user?.role === "admin" ? (
-            <PayrollManagement user={user}  />
-          ) : (
-            <div className="text-center text-red-500 font-semibold mt-10">
-              ❌ Access Denied — Only Admins can view this page
-            </div>
-          );
-
-          case "payslips":
-          // ✅ Allow Employee page only if user is admin
-          return user?.role === "admin" ? (
-            <MyPayslips user={user}  />
-          ) : (
-            <div className="text-center text-red-500 font-semibold mt-10">
-              ❌ Access Denied — Only Admins can view this page
-            </div>
-          );
-
-
-          case "recruitment":
-            // ✅ Allow Employee page only if user is admin
-            return user?.role === "admin" ? (
-              <RecruitmentPage user={user}  />
-            ) : (
-              <div className="text-center text-red-500 font-semibold mt-10">
-                ❌ Access Denied — Only Admins can view this page
-              </div>
-            );
-
-            case "onboarding":
-              // ✅ Allow Employee page only if user is admin
-              return user?.role === "admin" ? (
-                <OnboardingPage user={user}  />
-              ) : (
-                <div className="text-center text-red-500 font-semibold mt-10">
-                  ❌ Access Denied — Only Admins can view this page
-                </div>
-              );
+      // ------ GENERAL PAGES ------ //
       case "leave":
-        return <LeavePage user ={user}/>;
+        return <LeavePage user={user} />;
       case "task":
-        return <TaskPage user ={user}/>;
-      
+        return <TaskPage user={user} />;
+      case "rewards":
+          return <RewardPage user={user} />;
       case "salary":
-        return <SalaryPage user ={user}/>;
-      
+        return <SalaryPage user={user} />;
+
       default:
         return <DashboardPage user={user} />;
     }
   };
 
+  // ------------ ADMIN ACCESS BLOCK ------------ //
+  const AccessDenied = () => (
+    <div className="text-center text-red-500 font-semibold mt-10">
+      ❌ Access Denied — Admin Only
+    </div>
+  );
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar — ✅ Pass user prop */}
+    <div className="flex min-h-screen w-full bg-[#0f172a] text-white overflow-x-hidden">
+
+      {/* ---------------- SIDEBAR ---------------- */}
       <Sidebar
         activePage={activePage}
         setActivePage={setActivePage}
         onLogout={onLogout}
-        user={user} // ✅ Added this
+        user={user}
+        onToggle={(open) => setSidebarOpen(open)}
       />
 
-      {/* Content */}
-      <div className="flex-1 p-6 overflow-y-auto">{renderPage()}</div>
+      {/* ---------------- MAIN CONTENT AREA ---------------- */}
+      <div
+        className={`flex-1 min-h-screen w-full bg-[#0f172a] overflow-y-auto p-6 transition-all duration-300 ${
+          sidebarOpen ? "ml-64" : "ml-20"
+        }`}
+      >
+        {renderPage()}
+      </div>
     </div>
   );
 }

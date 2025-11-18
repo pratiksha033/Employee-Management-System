@@ -3,11 +3,50 @@ import { Plus, Edit, Trash, User, X } from "lucide-react";
 import DataTable from "react-data-table-component";
 
 const API_BASE_URL = "http://localhost:4000/api/v1";
-
-// Helper to get token
 const getAuthToken = () => localStorage.getItem("authToken");
 
-// Helper to format date
+const inputDarkClass =
+  "w-full bg-[#1E1E1E] border border-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500";
+
+const darkTableStyles = {
+  table: { style: { backgroundColor: "#111827", color: "#d1d5db" } },
+
+  headRow: {
+    style: { backgroundColor: "#1f2937", color: "#e5e7eb", fontWeight: "600" },
+  },
+
+  rows: {
+    style: {
+      backgroundColor: "#111827",
+      color: "#d1d5db",
+    },
+    highlightOnHoverStyle: {
+      backgroundColor: "#1f2937",
+      color: "#fff",
+    },
+  },
+
+  pagination: {
+    style: {
+      backgroundColor: "#111827",
+      color: "#cbd5e1",
+      borderTop: "1px solid #374151",
+    },
+
+    pageButtonsStyle: {
+      backgroundColor: "transparent",
+      color: "#cbd5e1",
+      fill: "#cbd5e1",
+      borderRadius: "6px",
+      "&:hover": {
+        backgroundColor: "#1f2937",
+        color: "#fff",
+        fill: "#fff",
+      },
+    },
+  },
+};
+
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
   return new Date(dateString).toLocaleDateString("en-US", {
@@ -21,10 +60,12 @@ export default function EmployeePage({ user }) {
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [profileView, setProfileView] = useState(null);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -35,45 +76,35 @@ export default function EmployeePage({ user }) {
 
   const isAdmin = user?.role === "admin";
 
-  // Fetch employees (Admin only)
   const fetchEmployees = async () => {
     if (!isAdmin) return;
     setIsLoading(true);
+
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/employee/all`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to fetch employees");
-      setEmployees(data.employees || []);
+      if (response.ok) setEmployees(data.employees);
     } catch (error) {
-      console.error("❌ Fetch Employees Error:", error.message);
-    } finally {
-      setIsLoading(false);
+      console.error(error);
     }
+    setIsLoading(false);
   };
 
-  // Fetch departments
   const fetchDepartments = async () => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/department`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await fetch(`${API_BASE_URL}/department`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to fetch departments");
-      setDepartments(data.departments || []);
+      const data = await res.json();
+      if (res.ok) setDepartments(data.departments);
     } catch (error) {
-      console.error("❌ Fetch Departments Error:", error.message);
+      console.error(error);
     }
   };
 
@@ -84,80 +115,59 @@ export default function EmployeePage({ user }) {
     }
   }, [isAdmin]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
   const closeModal = () => {
     setShowModal(false);
     setIsEditMode(false);
     setSelectedEmployee(null);
-    setFormData({
-      name: "",
-      email: "",
-      password: "",
-      dob: "",
-      department: "",
-    });
+    setFormData({ name: "", email: "", password: "", dob: "", department: "" });
   };
 
-  // Add Employee
-  const handleAddEmployee = async () => {
-    const { name, email, password, dob, department } = formData;
-    if (!name || !email || !password || !dob || !department) {
-      alert("⚠️ Please fill all required fields");
-      return;
-    }
+  const handleInputChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
+  const handleAddEmployee = async () => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/employee/add`, {
+      const res = await fetch(`${API_BASE_URL}/employee/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name, email, password, dob, department }),
+        body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to add employee");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
 
-      alert("✅ Employee added successfully!");
-      await fetchEmployees();
+      alert("Employee Added");
+      fetchEmployees();
       closeModal();
     } catch (error) {
-      console.error("❌ Add Employee Error:", error.message);
       alert(error.message);
     }
   };
 
-  // Edit Modal Open
-  const handleEditClick = (employee) => {
-    setSelectedEmployee(employee);
-    setFormData({
-      name: employee.name,
-      email: employee.email,
-      password: "",
-      dob: employee.dob ? new Date(employee.dob).toISOString().split("T")[0] : "",
-      department: employee.department?._id || "",
-    });
+  const handleEditClick = (emp) => {
     setIsEditMode(true);
+    setSelectedEmployee(emp);
+
+    setFormData({
+      name: emp.name,
+      email: emp.email,
+      password: "",
+      dob: emp.dob?.split("T")[0],
+      department: emp.department?._id || "",
+    });
+
     setShowModal(true);
   };
 
   const handleUpdateEmployee = async () => {
-    if (!selectedEmployee) return;
-    const { name, email, dob, department } = formData;
-    if (!name || !email || !dob || !department) {
-      alert("⚠️ Please fill all required fields");
-      return;
-    }
-
     try {
       const token = getAuthToken();
-      const response = await fetch(
+      const res = await fetch(
         `${API_BASE_URL}/employee/update/${selectedEmployee._id}`,
         {
           method: "PUT",
@@ -165,124 +175,81 @@ export default function EmployeePage({ user }) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ name, email, dob, department }),
+          body: JSON.stringify(formData),
         }
       );
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to update employee");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
 
-      alert("✅ Employee updated successfully!");
-      await fetchEmployees();
+      alert("Updated");
+      fetchEmployees();
       closeModal();
     } catch (error) {
-      console.error("❌ Update Employee Error:", error.message);
       alert(error.message);
     }
   };
 
   const handleDeleteEmployee = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this employee?")) return;
+    if (!window.confirm("Delete Employee?")) return;
+
     try {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/employee/delete/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/employee/delete/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to delete employee");
-      alert("✅ Employee deleted successfully!");
-      await fetchEmployees();
+      if (res.ok) fetchEmployees();
     } catch (error) {
-      console.error("❌ Delete Employee Error:", error.message);
       alert(error.message);
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    isEditMode ? handleUpdateEmployee() : handleAddEmployee();
-  };
-
-  // Employee Profile Modal
-  const EmployeeProfileModal = ({ employee, onClose }) => {
-    if (!employee) return null;
-    return (
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
-        <div className="bg-white rounded-2xl p-6 shadow-xl w-[400px] md:w-[500px] relative">
-          <button onClick={onClose} className="absolute top-3 right-3 text-gray-500 hover:text-red-500">
-            <X size={20} />
-          </button>
-          <div className="flex flex-col items-center text-center space-y-3">
-            <User className="w-20 h-20 text-gray-400 bg-gray-100 rounded-full p-3" />
-            <h2 className="text-xl font-semibold text-gray-800 capitalize">{employee.name}</h2>
-            <p className="text-gray-600">{employee.email}</p>
-            <div className="w-full mt-4 space-y-2 text-sm text-gray-700">
-              <div className="flex justify-between border-b pb-1">
-                <span className="font-medium">Department:</span>
-                <span>{employee.department?.name || "N/A"}</span>
-              </div>
-              <div className="flex justify-between border-b pb-1">
-                <span className="font-medium">DOB:</span>
-                <span>{formatDate(employee.dob)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Role:</span>
-                <span>{employee.role || "Employee"}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const columns = [
-    { name: "S.No", selector: (row, i) => i + 1, width: "70px" },
+    { name: "S.No", selector: (_, i) => i + 1, width: "70px" },
+
     {
       name: "Image",
       cell: (row) => (
         <User
           onClick={() => setProfileView(row)}
-          className="w-10 h-10 text-gray-400 bg-gray-100 rounded-full p-1 cursor-pointer hover:scale-110 transition-transform"
+          className="w-10 h-10 bg-gray-800 text-gray-400 rounded-full p-2 cursor-pointer hover:scale-110 transition"
         />
       ),
-      width: "100px",
     },
-    { name: "Name", selector: (row) => row.name, sortable: true },
+
+    { name: "Name", selector: (row) => row.name },
     { name: "Email", selector: (row) => row.email },
     { name: "DOB", selector: (row) => formatDate(row.dob) },
-    { name: "Department", selector: (row) => row.department?.name || "N/A" },
+    { name: "Department", selector: (row) => row.department?.name },
+
     {
       name: "Actions",
       cell: (row) => (
         <div className="flex gap-2">
-          <button onClick={() => handleEditClick(row)} className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-lg text-xs">
+          <button
+            className="p-2 bg-green-600 hover:bg-green-700 rounded-lg"
+            onClick={() => handleEditClick(row)}
+          >
             <Edit size={14} />
           </button>
-          <button onClick={() => handleDeleteEmployee(row._id)} className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg text-xs">
+
+          <button
+            className="p-2 bg-red-600 hover:bg-red-700 rounded-lg"
+            onClick={() => handleDeleteEmployee(row._id)}
+          >
             <Trash size={14} />
           </button>
         </div>
       ),
-      width: "150px",
     },
   ];
 
-  if (!isAdmin) {
-    return (
-      <div className="p-6">
-        <h2 className="text-2xl font-semibold text-red-600">Access Denied</h2>
-        <p className="text-gray-600">You do not have permission to manage employees.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold">Manage Employees</h2>
+    <div className="p-6 text-gray-200">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-semibold">Manage Employees</h2>
         <button
           onClick={() => setShowModal(true)}
           className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
@@ -291,73 +258,116 @@ export default function EmployeePage({ user }) {
         </button>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <DataTable columns={columns} data={employees} progressPending={isLoading} pagination highlightOnHover />
+      <div className="bg-gray-900 rounded-xl shadow-xl p-4">
+        <DataTable
+          columns={columns}
+          data={employees}
+          progressPending={isLoading}
+          pagination
+          highlightOnHover
+          customStyles={darkTableStyles}
+        />
       </div>
 
+      {/* ---------- MODAL ---------- */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 shadow-lg w-full max-w-lg">
-            <h3 className="text-xl font-semibold mb-4">{isEditMode ? "Edit Employee" : "Add Employee"}</h3>
-            <form onSubmit={handleSubmit}>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gray-900 text-gray-200 rounded-xl shadow-2xl p-6 w-full max-w-lg">
+            <h3 className="text-xl font-semibold mb-4">
+              {isEditMode ? "Edit Employee" : "Add Employee"}
+            </h3>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                isEditMode ? handleUpdateEmployee() : handleAddEmployee();
+              }}
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm mb-1 font-medium">Name</label>
-                  <input name="name" value={formData.name} onChange={handleInputChange} required className="border rounded-lg w-full p-2" />
+                  <label>Name</label>
+                  <input
+                    name="name"
+                    className={inputDarkClass}
+                    value={formData.name}
+                    onChange={handleInputChange}
+                  />
                 </div>
+
                 <div>
-                  <label className="block text-sm mb-1 font-medium">Email</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleInputChange} required className="border rounded-lg w-full p-2" />
+                  <label>Email</label>
+                  <input
+                    name="email"
+                    type="email"
+                    className={inputDarkClass}
+                    value={formData.email}
+                    onChange={handleInputChange}
+                  />
                 </div>
+
                 {!isEditMode && (
                   <div>
-                    <label className="block text-sm mb-1 font-medium">Password</label>
+                    <label>Password</label>
                     <input
-                      type="password"
                       name="password"
+                      type="password"
+                      className={inputDarkClass}
                       value={formData.password}
                       onChange={handleInputChange}
-                      required
-                      className="border rounded-lg w-full p-2"
                     />
                   </div>
                 )}
+
                 <div>
-                  <label className="block text-sm mb-1 font-medium">Date of Birth</label>
-                  <input type="date" name="dob" value={formData.dob} onChange={handleInputChange} required className="border rounded-lg w-full p-2" />
+                  <label>DOB</label>
+                  <input
+                    name="dob"
+                    type="date"
+                    className={inputDarkClass}
+                    value={formData.dob}
+                    onChange={handleInputChange}
+                  />
                 </div>
+
                 <div className="col-span-2">
-                  <label className="block text-sm mb-1 font-medium">Department</label>
+                  <label>Department</label>
                   <select
                     name="department"
+                    className={inputDarkClass}
                     value={formData.department}
                     onChange={handleInputChange}
-                    required
-                    className="border rounded-lg w-full p-2"
                   >
                     <option value="">Select Department</option>
-                    {departments.map((dept) => (
-                      <option key={dept._id} value={dept._id}>
-                        {dept.name}
+
+                    {departments.map((d) => (
+                      <option key={d._id} value={d._id}>
+                        {d.name}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
+
               <div className="flex justify-end gap-3 mt-6">
-                <button type="button" onClick={closeModal} className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg"
+                >
                   Cancel
                 </button>
-                <button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg">
-                  {isEditMode ? "Save Changes" : "Add Employee"}
+
+                <button
+                  type="submit"
+                  className="bg-teal-600 hover:bg-teal-700 px-4 py-2 rounded-lg"
+                >
+                  {isEditMode ? "Save" : "Add Employee"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      {profileView && <EmployeeProfileModal employee={profileView} onClose={() => setProfileView(null)} />}
     </div>
   );
 }

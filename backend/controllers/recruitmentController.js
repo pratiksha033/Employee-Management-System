@@ -1,19 +1,51 @@
-import { Applicant } from "../models/Applicant.js";
+import { Applicant } from "../models/applicant.js";
+import { Job } from "../models/Job.js";
 
-export const getApplicants = async (req, res) => {
+// Helper function to update job counters
+
+
+// GET all applicants + jobs
+export const getRecruitment = async (req, res) => {
   const applicants = await Applicant.find();
-  res.json({ applicants });
+  res.json({ success: true, applicants });
 };
 
-export const updateStage = async (req, res) => {
-  const { id } = req.params;
-  const { stage } = req.body;
-  await Applicant.findByIdAndUpdate(id, { stage });
-  res.json({ message: "Stage updated" });
+export const getJobs = async (req, res) => {
+  const jobs = await Job.find().sort({ createdAt: -1 });
+  res.json({ success: true, jobs });
 };
 
-export const deleteApplicant = async (req, res) => {
-  const { id } = req.params;
-  await Applicant.findByIdAndDelete(id);
-  res.json({ message: "Applicant deleted" });
+// CREATE JOB
+export const createJob = async (req, res) => {
+  try {
+    const job = await Job.create(req.body);
+    res.json({ success: true, job });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+};
+
+// UPDATE JOB FIELDS (pipeline counts)
+export const updateJobStats = async (req, res) => {
+  try {
+    const job = await Job.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json({ success: true, job });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+};
+
+// UPDATE APPLICANT STAGE
+export const updateApplicantStage = async (req, res) => {
+  try {
+    const applicant = await Applicant.findByIdAndUpdate(
+      req.params.id,
+      { stage: req.body.stage },
+      { new: true }
+    );
+
+    res.json({ success: true, applicant });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
 };

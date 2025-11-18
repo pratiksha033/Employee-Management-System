@@ -18,5 +18,6 @@ const departmentSchema = new mongoose.Schema({
   },
 });
 
+// 🟢 FIX to avoid Overwrite Model Error
 export const Department =
   mongoose.models.Department || mongoose.model("Department", departmentSchema);
