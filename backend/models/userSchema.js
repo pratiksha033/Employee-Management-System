@@ -17,11 +17,17 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, "Password is required"],
     minlength: [6, "Password must be at least 6 characters"],
+    select: false,
   },
   role: {
     type: String,
     enum: ["employee", "admin"],
     default: "employee",
+  },
+  dob: Date,
+  department: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Department",
   },
   createdAt: {
     type: Date,
@@ -29,4 +35,4 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-export const User = mongoose.model("User", userSchema);
+export const User = mongoose.models.User || mongoose.model("User", userSchema);

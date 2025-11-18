@@ -4,92 +4,110 @@ import SignupView from "./components/SignupView";
 import DashboardLayout from "./components/DashboardLayout";
 
 export default function App() {
-    const [view, setView] = useState('login'); // 'login', 'signup', or 'dashboard'
-    const [user, setUser] = useState(null);
+  const [view, setView] = useState('login'); // 'login', 'signup', or 'dashboard'
+  const [user, setUser] = useState(null);
+  const [darkMode, setDarkMode] = useState(
+    localStorage.getItem("theme") === "dark"
+  );
 
-    // Effect to check for an existing token on component mount
-    useEffect(() => {
-        const token = localStorage.getItem('authToken');
-        const userName = localStorage.getItem('userName');
-        if (token && userName) {
-            setUser({ name: userName });
-            setView('dashboard');
-        }
-    }, []);
+  const API_BASE_URL = 'http://localhost:4000/api/v1/user';
 
+  // Apply dark mode class to body
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
 
-    const API_BASE_URL = 'http://localhost:4000/api/v1/user'; // Corrected backend URL
+  // Check auth on mount
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const userName = localStorage.getItem('userName');
+    const userRole = localStorage.getItem('userRole');
+    if (token && userName) {
+      setUser({ name: userName, role: userRole });
+      setView('dashboard');
+    }
+  }, []);
 
-    const handleLogin = async (email, password) => {
-        console.log('Login attempt:', { email, password });
+  const handleLogin = async (email, password) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Login failed');
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Login failed');
-            
-            // Store token and user data from backend response
-            localStorage.setItem('authToken', data.token);
-            localStorage.setItem('userName', data.user.name);
-            setUser({ name: data.user.name, email: data.user.email });
-            setView('dashboard');
-            alert(data.message);
-        } catch (error) {
-            console.error('Login error:', error);
-            alert(error.message);
-        }
-    };
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('userName', data.user.name);
+      localStorage.setItem('userRole', data.user.role);
+      setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
+      setView('dashboard');
+      alert(data.message);
+    } catch (error) {
+      console.error('Login error:', error);
+      alert(error.message);
+    }
+  };
 
-    const handleSignup = async (name, email, password, role) => {
-        console.log('Signup attempt:', { name, email, password, role });
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password, role }), // Added role to body
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Signup failed');
+  const handleSignup = async (name, email, password, role) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Signup failed');
 
-            alert('Signup successful! Please log in.');
-            setView('login');
-        } catch (error) {
-            console.error('Signup error:', error);
-            alert(error.message);
-        }
-    };
+      alert('Signup successful! Please log in.');
+      setView('login');
+    } catch (error) {
+      console.error('Signup error:', error);
+      alert(error.message);
+    }
+  };
 
-    const handleLogout = () => {
-        console.log('Logging out...');
-        // No API call needed based on backend code, just clear local state
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userName');
-        setUser(null);
-        setView('login');
-        alert('You have been logged out.');
-    };
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userName');
+    setUser(null);
+    setView('login');
+    alert('You have been logged out.');
+  };
 
-    const renderView = () => {
-        switch (view) {
-            case 'signup':
-                return <SignupView onShowLogin={() => setView('login')} onSignup={handleSignup} />;
-            case 'dashboard':
-                return <DashboardLayout user={user} onLogout={handleLogout} />;
-            case 'login':
-            default:
-                return <LoginView onShowSignup={() => setView('signup')} onLogin={handleLogin} />;
-        }
-    };
+  const renderView = () => {
+    switch (view) {
+      case 'signup':
+        return <SignupView onShowLogin={() => setView('login')} onSignup={handleSignup} />;
+      case 'dashboard':
+        return <DashboardLayout user={user} onLogout={handleLogout} />;
+      case 'login':
+      default:
+        return <LoginView onShowSignup={() => setView('signup')} onLogin={handleLogin} />;
+    }
+  };
 
-    return (
-        <div className="bg-gray-100 flex items-center justify-center min-h-screen p-4 font-sans">
-            {renderView()}
-        </div>
-    );
+  return (
+    <div
+      className={`min-h-screen flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300 
+      ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}
+    >
+      {/* 🌙 Toggle Button */}
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        className="absolute top-4 right-4 bg-gray-700 text-white px-3 py-1 rounded-md shadow-md hover:bg-gray-600"
+      >
+        {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+      </button>
+
+      {renderView()}
+    </div>
+  );
 }
-
