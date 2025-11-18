@@ -3,20 +3,18 @@ import {
   generatePayroll,
   getAllPayrolls,
   getMyPayrolls,
+  getEmployeesByDepartment,
 } from "../controllers/payrollController.js";
-import { downloadPayslip } from "../controllers/payrollPayslip.js";
 import { isAuthenticated, isAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// ADMIN ONLY
+// Admin Routes
 router.post("/generate", isAuthenticated, isAdmin, generatePayroll);
 router.get("/all", isAuthenticated, isAdmin, getAllPayrolls);
+router.get("/department/:departmentId/employees", isAuthenticated, isAdmin, getEmployeesByDepartment);
 
-// EMPLOYEE
+// Employee Route
 router.get("/my", isAuthenticated, getMyPayrolls);
-
-// Payslip download
-router.get("/payslip/:id", isAuthenticated, downloadPayslip);
 
 export default router;
