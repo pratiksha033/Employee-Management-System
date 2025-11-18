@@ -1,26 +1,38 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { CalendarDays } from "lucide-react";
 
-const API = "http://localhost:4000/api/tasks";
+const API = "http://localhost:4000/api/v1/tasks";
 
 export default function TaskPage() {
   const [tasks, setTasks] = useState([]);
   const [form, setForm] = useState({ title: "", description: "", status: "To Do" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
 
   const statusFilters = ["All", "To Do", "In Progress", "Done"];
   const [activeFilter, setActiveFilter] = useState("All");
 
+  const token = localStorage.getItem("token"); // get token
+
   const fetchTasks = async () => {
+    if (!token) {
+      setIsLoggedIn(false);
+      setError("Please login first!");
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/my`, { withCredentials: true });
+      const res = await axios.get(`${API}/my`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setTasks(res.data.tasks);
+      setError("");
     } catch (err) {
-      console.log(err);
-      setError("Failed to fetch tasks");
+      console.error(err);
+      setError("Failed to fetch tasks. Please login again.");
+      setIsLoggedIn(false);
     } finally {
       setLoading(false);
     }
@@ -33,12 +45,20 @@ export default function TaskPage() {
       return;
     }
 
+    if (!token) {
+      setIsLoggedIn(false);
+      setError("Please login first!");
+      return;
+    }
+
     try {
-      await axios.post(`${API}/add`, form, { withCredentials: true });
+      await axios.post(`${API}/add`, form, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setForm({ title: "", description: "", status: "To Do" });
       fetchTasks();
     } catch (err) {
-      console.log(err);
+      console.error(err);
       setError(err.response?.data?.message || "Failed to add task");
     }
   };
@@ -46,7 +66,17 @@ export default function TaskPage() {
   const filteredTasks =
     activeFilter === "All" ? tasks : tasks.filter((t) => t.status === activeFilter);
 
-  useEffect(() => { fetchTasks(); }, []);
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white bg-[#0f0f0f]">
+        <h2>Please login first to view your tasks.</h2>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-white px-8 py-8 font-inter transition-colors">
@@ -66,19 +96,19 @@ export default function TaskPage() {
         <input
           type="text"
           placeholder="Task Title"
-          className="p-3 rounded bg-[#1F2937] border border-gray-600 col-span-1 md:col-span-1"
+          className="p-3 rounded bg-[#1F2937] border border-gray-600"
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
         />
         <input
           type="text"
           placeholder="Description"
-          className="p-3 rounded bg-[#1F2937] border border-gray-600 col-span-1 md:col-span-1"
+          className="p-3 rounded bg-[#1F2937] border border-gray-600"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
         <select
-          className="p-3 rounded bg-[#1F2937] border border-gray-600 col-span-1 md:col-span-1"
+          className="p-3 rounded bg-[#1F2937] border border-gray-600"
           value={form.status}
           onChange={(e) => setForm({ ...form, status: e.target.value })}
         >
@@ -111,13 +141,23 @@ export default function TaskPage() {
       {/* Task Grid */}
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredTasks.map((task) => (
-          <div key={task._id} className="bg-[#181818] border border-t-4 border-blue-500 rounded-2xl p-5 shadow hover:shadow-lg transition-all duration-200">
+          <div
+            key={task._id}
+            className="bg-[#181818] border border-t-4 border-blue-500 rounded-2xl p-5 shadow hover:shadow-lg transition-all duration-200"
+          >
             <div className="flex justify-between items-start mb-3">
               <h2 className="text-lg font-semibold text-gray-100">{task.title}</h2>
-              <span className={`text-xs px-3 py-1 rounded-md font-medium ${
-                task.status === "In Progress" ? "bg-blue-900/40 text-blue-300" :
-                task.status === "To Do" ? "bg-yellow-900/40 text-yellow-300" : "bg-green-900/40 text-green-300"
-              }`}>{task.status}</span>
+              <span
+                className={`text-xs px-3 py-1 rounded-md font-medium ${
+                  task.status === "In Progress"
+                    ? "bg-blue-900/40 text-blue-300"
+                    : task.status === "To Do"
+                    ? "bg-yellow-900/40 text-yellow-300"
+                    : "bg-green-900/40 text-green-300"
+                }`}
+              >
+                {task.status}
+              </span>
             </div>
             <p className="text-gray-400 text-sm mb-5">{task.description}</p>
             <div className="text-gray-400 text-xs">{new Date(task.createdAt).toLocaleString()}</div>

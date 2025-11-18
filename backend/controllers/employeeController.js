@@ -1,6 +1,6 @@
 import { Employee } from "../models/employeeSchema.js";
 import {User} from "../models/userSchema.js";
-import {Department} from "../models/departmentSchema.js";
+import {Department} from "../models/DepartmentSchema.js";
 import bcrypt from "bcrypt";
 
 // ➕ Add Employee (Admin Only)
@@ -155,3 +155,5 @@ export const deleteEmployee = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+

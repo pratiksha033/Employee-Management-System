@@ -52,7 +52,10 @@ const PayrollPage = () => {
   const fetchEmployeesByDepartment = async (deptId) => {
     if (!deptId) return setEmployees([]);
     try {
-      const res = await axios.get(`${API_BASE_URL}/payroll/department/${deptId}/employees`, getAuthConfig());
+      const res = await axios.get(
+        `${API_BASE_URL}/payroll/department/${deptId}/employees` , // <- adjusted route
+        getAuthConfig()
+      );
       setEmployees(res.data.employees || []);
     } catch (err) {
       console.error("Error fetching employees by department:", err.response?.data || err);
@@ -64,6 +67,29 @@ const PayrollPage = () => {
     fetchDepartments();
     fetchPayrolls();
   }, []);
+  // 1️⃣ Add employees fetching function
+const fetchEmployees = async () => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/employee/all`, getAuthConfig());
+    setEmployees(res.data.employees || []);
+  } catch (err) {
+    console.error("Error fetching employees:", err.response?.data || err);
+    setEmployees([]);
+  }
+};
+
+// 2️⃣ Call it in useEffect along with departments
+useEffect(() => {
+  fetchDepartments();
+  fetchEmployees(); // ✅ fetch all employees
+  fetchPayrolls();
+}, []);
+
+// 3️⃣ Filter employees when a department is selected
+const filteredEmployees = selectedDepartment
+  ? employees.filter((emp) => emp.department?._id === selectedDepartment)
+  : [];
+
 
   // Handle department change
   const handleDepartmentChange = (e) => {
@@ -84,7 +110,15 @@ const PayrollPage = () => {
     try {
       await axios.post(`${API_BASE_URL}/payroll/generate`, form, getAuthConfig());
       alert("Payroll generated successfully!");
-      setForm({ employeeId: "", month: "", baseSalary: "", bonus: "", overtimePay: "", tax: "", leaveDeductions: "" });
+      setForm({
+        employeeId: "",
+        month: "",
+        baseSalary: "",
+        bonus: "",
+        overtimePay: "",
+        tax: "",
+        leaveDeductions: "",
+      });
       setSelectedDepartment("");
       setEmployees([]);
       fetchPayrolls();
@@ -137,20 +171,21 @@ const PayrollPage = () => {
           <div>
             <label className="block mb-2 font-medium">Select Employee</label>
             <select
-              name="employeeId"
-              value={form.employeeId}
-              onChange={handleChange}
-              disabled={!selectedDepartment}
-              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">-- Select Employee --</option>
-              {employees.map((emp) => (
-                <option key={emp._id} value={emp._id}>
-                  {emp.name} ({emp.email})
-                </option>
-              ))}
-            </select>
+  name="employeeId"
+  value={form.employeeId}
+  onChange={handleChange}
+  disabled={!selectedDepartment}
+  className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500"
+  required
+>
+  <option value="">-- Select Employee --</option>
+  {filteredEmployees.map((emp) => (
+    <option key={emp._id} value={emp._id}>
+      {emp.name} ({emp.email})
+    </option>
+  ))}
+</select>
+
           </div>
 
           {/* Month */}

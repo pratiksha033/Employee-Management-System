@@ -13,6 +13,7 @@ const router = express.Router();
 router.post("/generate", isAuthenticated, isAdmin, generatePayroll);
 router.get("/all", isAuthenticated, isAdmin, getAllPayrolls);
 router.get("/department/:departmentId/employees", isAuthenticated, isAdmin, getEmployeesByDepartment);
+router.get("/payroll/department/:id/employees", isAuthenticated, getEmployeesByDepartment);
 
 // Employee Route
 router.get("/my", isAuthenticated, getMyPayrolls);
