@@ -13,7 +13,7 @@ export default function TaskPage() {
   const statusFilters = ["All", "To Do", "In Progress", "Done"];
   const [activeFilter, setActiveFilter] = useState("All");
 
-  const token = localStorage.getItem("token"); // get token
+  const token = localStorage.getItem("authToken"); // get token
 
   const fetchTasks = async () => {
     if (!token) {
