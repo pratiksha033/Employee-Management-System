@@ -4,268 +4,201 @@ import { Payroll } from "../models/payrollSchema.js";
 import ErrorHandler from "../middleware/error.js";
 import { catchAsyncError } from "../middleware/catchAsyncError.js";
 import { Employee } from "../models/employeeSchema.js";
+
 export const downloadPayslip = catchAsyncError(async (req, res, next) => {
-  const payroll = await Payroll.findById(req.params.id).populate(
-    "employee",
-    "name email"
-  );
+	const payroll = await Payroll.findById(req.params.id).populate("employee", "name email");
 
-  if (!payroll) {
-    return next(new ErrorHandler("Payslip not found", 404));
-  }
-  try {const empdata = Employee.findById(payroll.employee);}
-  catch(err){
-    return res.status(500).json({ message : e });
-  }
-  // Authorization: employees can only download their own payslips
-  if (
-    req.user.role === "employee" &&
-    payroll.employee._id.toString() !== req.user._id.toString()
-  ) {
-    return next(new ErrorHandler("Access denied", 403));
-  }
+	if (!payroll) {
+		return next(new ErrorHandler("Payslip not found", 404));
+	}
 
-  // ------------ PDF GENERATION ------------
-  const doc = new PDFDocument({ size: "A4", margin: 50 });
+	// ---- Fetch Employee full data ----
+	const empData = await Employee.findById(payroll.employee);
 
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename=payslip-${payroll._id}.pdf`
-  );
+	if (!empData) {
+		return next(new ErrorHandler("Employee data not found", 404));
+	}
 
-  doc.pipe(res);
+	// Authorization
+	if (req.user.role === "employee" && payroll.employee._id.toString() !== req.user._id.toString()) {
+		return next(new ErrorHandler("Access denied", 403));
+	}
 
-  // Helper values
-  const employeeName = empData.name || "N/A";
-  const employeeEmail = empData.email || "N/A";
-  const month = payroll.month || "N/A";
-  const generatedAt = payroll.generatedAt
-    ? new Date(payroll.generatedAt).toLocaleString("en-IN")
-    : "N/A";
+	// ------------ PDF GENERATION ------------
+	const doc = new PDFDocument({ size: "A4", margin: 50 });
 
-  const baseSalary = Number(payroll.baseSalary || 0);
-  const bonus = Number(payroll.bonus || 0);
-  const overtimePay = Number(payroll.overtimePay || 0);
-  const tax = Number(payroll.tax || 0);
-  const leaveDeductions = Number(payroll.leaveDeductions || 0);
-  const netPay = Number(payroll.netPay || 0);
+	res.setHeader("Content-Type", "application/pdf");
+	res.setHeader(
+		"Content-Disposition",
+		`attachment; filename=payslip-${payroll._id}.pdf`
+	);
 
-  // ---------- HEADER ----------
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(22)
-    .text("Company Name Pvt. Ltd.", { align: "center" });
+	doc.pipe(res);
 
-  doc
-    .font("Helvetica")
-    .fontSize(10)
-    .text("Address Line 1, Address Line 2, City, State - Pincode", {
-      align: "center",
-    })
-    .moveDown(0.5);
+	// Helper values
+	const employeeName = empData.name || "N/A";
+	const employeeEmail = empData.email || "N/A";
+	const month = payroll.month || "N/A";
+	const generatedAt = payroll.generatedAt
+		? new Date(payroll.generatedAt).toLocaleString("en-IN")
+		: "N/A";
 
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(16)
-    .text("PAYSLIP", { align: "center" });
+	const baseSalary = Number(payroll.baseSalary || 0);
+	const bonus = Number(payroll.bonus || 0);
+	const overtimePay = Number(payroll.overtimePay || 0);
+	const tax = Number(payroll.tax || 0);
+	const leaveDeductions = Number(payroll.leaveDeductions || 0);
+	const netPay = Number(payroll.netPay || 0);
 
-  doc.moveDown(1);
+	// ---------- HEADER ----------
+	doc.font("Helvetica-Bold").fontSize(22).text("Company Name Pvt. Ltd.", { align: "center" });
 
-  // Draw a line under header
-  const pageWidth = doc.page.width;
-  const { left, right } = doc.page.margins;
-  doc
-    .moveTo(left, doc.y)
-    .lineTo(pageWidth - right, doc.y)
-    .stroke();
+	doc.font("Helvetica")
+		.fontSize(10)
+		.text("Address Line 1, Address Line 2, City, State - Pincode", { align: "center" })
+		.moveDown(0.5);
 
-  doc.moveDown(0.8);
+	doc.font("Helvetica-Bold").fontSize(16).text("PAYSLIP", { align: "center" });
 
-  // ---------- EMPLOYEE & PAYSLIP INFO TABLE ----------
-  const tableTop = doc.y;
-  const tableLeft = left;
-  const tableWidth = pageWidth - left - right;
-  const rowHeight = 20;
-  const colSplit = tableLeft + tableWidth / 2; // two-column layout
+	doc.moveDown(1);
 
-  const drawRow = (labelLeft, valueLeft, labelRight, valueRight, y) => {
-    const padding = 5;
-    const labelWidth = 80;
+	// Divider line
+	const pageWidth = doc.page.width;
+	const { left, right } = doc.page.margins;
 
-    // Left label
-    doc.font("Helvetica-Bold").fontSize(11).text(labelLeft, tableLeft + padding, y + padding, {
-      width: labelWidth,
-    });
-    // Left value
-    doc.font("Helvetica").fontSize(11).text(valueLeft, tableLeft + padding + labelWidth, y + padding, {
-      width: colSplit - tableLeft - labelWidth - padding * 2,
-    });
+	doc.moveTo(left, doc.y).lineTo(pageWidth - right, doc.y).stroke();
+	doc.moveDown(0.8);
 
-    // Right label
-    if (labelRight) {
-      doc.font("Helvetica-Bold").fontSize(11).text(labelRight, colSplit + padding, y + padding, {
-        width: labelWidth,
-      });
-    }
+	// ---------- EMPLOYEE INFO TABLE ----------
+	const tableTop = doc.y;
+	const tableLeft = left;
+	const tableWidth = pageWidth - left - right;
+	const rowHeight = 20;
+	const colSplit = tableLeft + tableWidth / 2;
 
-    // Right value
-    if (valueRight) {
-      doc.font("Helvetica").fontSize(11).text(valueRight, colSplit + padding + labelWidth, y + padding, {
-        width: tableLeft + tableWidth - (colSplit + labelWidth + padding * 2),
-      });
-    }
+	const drawRow = (labelLeft, valueLeft, labelRight, valueRight, y) => {
+		const padding = 5;
+		const labelWidth = 80;
 
-    // Horizontal line for row bottom
-    doc
-      .moveTo(tableLeft, y + rowHeight)
-      .lineTo(tableLeft + tableWidth, y + rowHeight)
-      .stroke();
-  };
+		doc.font("Helvetica-Bold").fontSize(11).text(labelLeft, tableLeft + padding, y + padding, {
+			width: labelWidth,
+		});
 
-  // Outer border of info table
-  const infoRows = 3;
-  const infoTableHeight = rowHeight * infoRows;
-  doc
-    .rect(tableLeft, tableTop, tableWidth, infoTableHeight)
-    .stroke();
+		doc.font("Helvetica")
+			.fontSize(11)
+			.text(valueLeft, tableLeft + padding + labelWidth, y + padding, {
+				width: colSplit - tableLeft - labelWidth - padding * 2,
+			});
 
-  let currentY = tableTop;
+		if (labelRight) {
+			doc.font("Helvetica-Bold")
+				.fontSize(11)
+				.text(labelRight, colSplit + padding, y + padding, {
+					width: labelWidth,
+				});
+		}
 
-  drawRow(
-    "Employee",
-    employeeName,
-    "Email",
-    employeeEmail,
-    currentY
-  );
-  currentY += rowHeight;
+		if (valueRight) {
+			doc.font("Helvetica")
+				.fontSize(11)
+				.text(valueRight, colSplit + padding + labelWidth, y + padding, {
+					width: tableLeft + tableWidth - (colSplit + labelWidth + padding * 2),
+				});
+		}
 
-  drawRow(
-    "Month",
-    month,
-    "Generated At",
-    generatedAt,
-    currentY
-  );
-  currentY += rowHeight;
+		doc.moveTo(tableLeft, y + rowHeight).lineTo(tableLeft + tableWidth, y + rowHeight).stroke();
+	};
 
-  drawRow(
-    "Employee ID",
-    empdata._id.toString() || "N/A",
-    "Payslip ID",
-    payroll._id.toString(),
-    currentY
-  );
-  currentY += rowHeight;
+	// Outer border of info table
+	const infoRows = 3;
+	const infoTableHeight = rowHeight * infoRows;
 
-  doc.moveDown(2);
+	doc.rect(tableLeft, tableTop, tableWidth, infoTableHeight).stroke();
 
-  // ---------- EARNINGS & DEDUCTIONS TABLE ----------
-  const sectionTitleY = currentY + 20;
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(13)
-    .text("Earnings & Deductions", left, sectionTitleY);
+	let currentY = tableTop;
 
-  let earnDedTop = sectionTitleY + 20;
-  const colWidth = tableWidth / 2;
+	drawRow("Employee", employeeName, "Email", employeeEmail, currentY);
+	currentY += rowHeight;
 
-  // Draw outer box for earnings (left) and deductions (right)
-  const earningBoxHeight = rowHeight * 4;
-  const deductionBoxHeight = rowHeight * 3;
-  const boxHeight = Math.max(earningBoxHeight, deductionBoxHeight);
+	drawRow("Month", month, "Generated At", generatedAt, currentY);
+	currentY += rowHeight;
 
-  // Earnings box
-  doc
-    .rect(tableLeft, earnDedTop, colWidth, boxHeight)
-    .stroke();
-  // Deductions box
-  doc
-    .rect(tableLeft + colWidth, earnDedTop, colWidth, boxHeight)
-    .stroke();
+	drawRow("Employee ID", empData._id.toString(), "Payslip ID", payroll._id.toString(), currentY);
+	currentY += rowHeight;
 
-  // Titles
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(12)
-    .text("Earnings", tableLeft + 5, earnDedTop + 5);
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(12)
-    .text("Deductions", tableLeft + colWidth + 5, earnDedTop + 5);
+	doc.moveDown(2);
 
-  const drawAmountRow = (label, amount, x, y) => {
-    doc.font("Helvetica").fontSize(11).text(label, x + 5, y + 5);
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(11)
-      .text(`₹${Number(amount || 0).toLocaleString("en-IN")}`, x + colWidth - 5 - 100, y + 5, {
-        width: 100,
-        align: "right",
-      });
-    // row line
-    doc
-      .moveTo(x, y + rowHeight)
-      .lineTo(x + colWidth, y + rowHeight)
-      .stroke();
-  };
+	// ---------- EARNINGS & DEDUCTIONS ----------
+	const sectionTitleY = currentY + 20;
+	doc.font("Helvetica-Bold").fontSize(13).text("Earnings & Deductions", left, sectionTitleY);
 
-  let earnRowY = earnDedTop + rowHeight; // first row after title row
-  let dedRowY = earnDedTop + rowHeight;
+	let earnDedTop = sectionTitleY + 20;
+	const colWidth = tableWidth / 2;
 
-  // Earnings
-  drawAmountRow("Base Salary", baseSalary, tableLeft, earnRowY);
-  earnRowY += rowHeight;
-  drawAmountRow("Bonus", bonus, tableLeft, earnRowY);
-  earnRowY += rowHeight;
-  drawAmountRow("Overtime", overtimePay, tableLeft, earnRowY);
+	const earningBoxHeight = rowHeight * 4;
+	const deductionBoxHeight = rowHeight * 3;
+	const boxHeight = Math.max(earningBoxHeight, deductionBoxHeight);
 
-  // Deductions
-  drawAmountRow("Tax", tax, tableLeft + colWidth, dedRowY);
-  dedRowY += rowHeight;
-  drawAmountRow("Leave Deductions", leaveDeductions, tableLeft + colWidth, dedRowY);
+	doc.rect(tableLeft, earnDedTop, colWidth, boxHeight).stroke();
+	doc.rect(tableLeft + colWidth, earnDedTop, colWidth, boxHeight).stroke();
 
-  // ---------- NET PAY BOX ----------
-  const netPayTop = earnDedTop + boxHeight + 30;
+	doc.font("Helvetica-Bold").fontSize(12).text("Earnings", tableLeft + 5, earnDedTop + 5);
+	doc.font("Helvetica-Bold").fontSize(12).text("Deductions", tableLeft + colWidth + 5, earnDedTop + 5);
 
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(13)
-    .text("Net Pay", left, netPayTop);
+	const drawAmountRow = (label, amount, x, y) => {
+		doc.font("Helvetica").fontSize(11).text(label, x + 5, y + 5);
 
-  const netBoxTop = netPayTop + 10;
-  const netBoxHeight = 40;
+		doc.font("Helvetica-Bold")
+			.fontSize(11)
+			.text(`₹${Number(amount || 0).toLocaleString("en-IN")}`, x + colWidth - 105, y + 5, {
+				width: 100,
+				align: "right",
+			});
 
-  doc
-    .rect(tableLeft, netBoxTop, tableWidth, netBoxHeight)
-    .stroke();
+		doc.moveTo(x, y + rowHeight).lineTo(x + colWidth, y + rowHeight).stroke();
+	};
 
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(14)
-    .text("Net Amount Payable", tableLeft + 10, netBoxTop + 10);
+	let earnRowY = earnDedTop + rowHeight;
+	let dedRowY = earnDedTop + rowHeight;
 
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(14)
-    .text(
-      `₹${netPay.toLocaleString("en-IN")}`,
-      tableLeft + tableWidth - 10 - 150,
-      netBoxTop + 10,
-      { width: 150, align: "right" }
-    );
+	// Earnings
+	drawAmountRow("Base Salary", baseSalary, tableLeft, earnRowY);
+	earnRowY += rowHeight;
+	drawAmountRow("Bonus", bonus, tableLeft, earnRowY);
+	earnRowY += rowHeight;
+	drawAmountRow("Overtime", overtimePay, tableLeft, earnRowY);
 
-  // Optional: amount in words (simple version)
-  // You can plug a proper "number to words" helper here
-  doc
-    .font("Helvetica")
-    .fontSize(10)
-    .text(
-      `This is a system-generated payslip and does not require a signature.`,
-      left,
-      netBoxTop + netBoxHeight + 20
-    );
+	// Deductions
+	drawAmountRow("Tax", tax, tableLeft + colWidth, dedRowY);
+	dedRowY += rowHeight;
+	drawAmountRow("Leave Deductions", leaveDeductions, tableLeft + colWidth, dedRowY);
 
-  doc.end();
+	// ---------- NET PAY ----------
+	const netPayTop = earnDedTop + boxHeight + 30;
+
+	doc.font("Helvetica-Bold").fontSize(13).text("Net Pay", left, netPayTop);
+
+	const netBoxTop = netPayTop + 10;
+	const netBoxHeight = 40;
+
+	doc.rect(tableLeft, netBoxTop, tableWidth, netBoxHeight).stroke();
+
+	doc.font("Helvetica-Bold").fontSize(14).text("Net Amount Payable", tableLeft + 10, netBoxTop + 10);
+
+	doc.font("Helvetica-Bold")
+		.fontSize(14)
+		.text(`₹${netPay.toLocaleString("en-IN")}`, tableLeft + tableWidth - 160, netBoxTop + 10, {
+			width: 150,
+			align: "right",
+		});
+
+	doc.font("Helvetica")
+		.fontSize(10)
+		.text(
+			"This is a system-generated payslip and does not require a signature.",
+			left,
+			netBoxTop + netBoxHeight + 20
+		);
+
+	doc.end();
 });
