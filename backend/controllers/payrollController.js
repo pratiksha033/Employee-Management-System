@@ -1,48 +1,31 @@
 import { Payroll } from "../models/payrollSchema.js";
 import { User } from "../models/userSchema.js";
-import ErrorHandler from "../middleware/error.js";
 import { catchAsyncError } from "../middleware/catchAsyncError.js";
+import ErrorHandler from "../middleware/error.js";
 
-// ADMIN: Create payroll for an employee
+// =============================
+// Admin: Generate Payroll
+// =============================
 export const generatePayroll = catchAsyncError(async (req, res, next) => {
-  const {
-    employeeId,
+  const { employeeId, month, baseSalary, bonus, overtimePay, tax, leaveDeductions } =
+    req.body;
+
+  if (!employeeId || !month || !baseSalary) {
+    return next(new ErrorHandler("Employee, Month, and Base Salary are required", 400));
+  }
+
+  const employee = await User.findById(employeeId);
+  if (!employee) return next(new ErrorHandler("Employee not found", 404));
+
+  const payroll = await Payroll.create({
+    employee: employee._id,
+    employeeName: employee.name,
     month,
     baseSalary,
     bonus,
     overtimePay,
     tax,
     leaveDeductions,
-  } = req.body;
-
-  if (!employeeId || !month || !baseSalary) {
-    return next(new ErrorHandler("Missing required payroll fields", 400));
-  }
-
-  // Validate employee exists
-  const employee = await User.findById(employeeId);
-  if (!employee) {
-    return next(new ErrorHandler("Employee not found", 404));
-  }
-
-  const netPay =
-    Number(baseSalary) +
-    Number(bonus || 0) +
-    Number(overtimePay || 0) -
-    Number(tax || 0) -
-    Number(leaveDeductions || 0);
-
-  const payroll = await Payroll.create({
-    employee: employee._id,
-    employeeName: employee.name,
-    month,
-    baseSalary: Number(baseSalary),
-    bonus: Number(bonus || 0),
-    overtimePay: Number(overtimePay || 0),
-    tax: Number(tax || 0),
-    leaveDeductions: Number(leaveDeductions || 0),
-    netPay,
-    generatedAt: new Date(),
   });
 
   res.status(201).json({
@@ -52,20 +35,32 @@ export const generatePayroll = catchAsyncError(async (req, res, next) => {
   });
 });
 
-// ADMIN: Get all payrolls
-export const getAllPayrolls = catchAsyncError(async (req, res) => {
-  const payrolls = await Payroll.find()
-    .populate("employee", "name email")
-    .sort({ generatedAt: -1 });
-
+// =============================
+// Admin: Get All Payrolls
+// =============================
+export const getAllPayrolls = catchAsyncError(async (req, res, next) => {
+  const payrolls = await Payroll.find().sort({ generatedAt: -1 });
   res.status(200).json({ success: true, payrolls });
 });
 
-// EMPLOYEE: Get their payrolls
-export const getMyPayrolls = catchAsyncError(async (req, res) => {
-  const payrolls = await Payroll.find({ employee: req.user._id }).sort({
-    generatedAt: -1,
-  });
-
+// =============================
+// Employee: Get My Payrolls
+// =============================
+export const getMyPayrolls = catchAsyncError(async (req, res, next) => {
+  const payrolls = await Payroll.find({ employee: req.user.id }).sort({ generatedAt: -1 });
   res.status(200).json({ success: true, payrolls });
+});
+
+// =============================
+// Admin: Get Employees by Department
+// =============================
+export const getEmployeesByDepartment = catchAsyncError(async (req, res, next) => {
+  const { departmentId } = req.params;
+  if (!departmentId) return next(new ErrorHandler("Department ID required", 400));
+
+  const employees = await User.find({ department: departmentId, role: "employee" }).select(
+    "_id name email"
+  );
+
+  res.status(200).json({ success: true, employees });
 });

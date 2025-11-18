@@ -1,6 +1,6 @@
 import { Salary } from "../models/salaryModel.js";
 import { User } from "../models/userSchema.js";
-import { Department } from "../models/departmentSchema.js";
+import { Department } from "../models/DepartmentSchema.js";
 import { Employee } from "../models/employeeSchema.js";
 import { catchAsyncError } from "../middleware/catchAsyncError.js";
 import ErrorHandler from "../middleware/error.js";
