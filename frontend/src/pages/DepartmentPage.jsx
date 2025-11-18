@@ -1,50 +1,42 @@
 import React, { useState, useEffect } from "react";
+import { Pencil, Trash2, Plus, X } from "lucide-react";
 
-// Base API
 const API_BASE_URL = "http://localhost:4000/api/v1/department";
 
-// Get token and user
 const getAuthToken = () => localStorage.getItem("authToken");
-const getUserRole = () => localStorage.getItem("userRole"); // save role when user logs in
+const getUserRole = () => localStorage.getItem("userRole");
 
 export default function DepartmentPage() {
   const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [editDept, setEditDept] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [newDept, setNewDept] = useState({ name: "", description: "" });
 
-  const userRole = getUserRole(); // 'admin' or 'employee'
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const [newDept, setNewDept] = useState({ name: "", description: "" });
+  const [editDept, setEditDept] = useState(null);
+
+  const userRole = getUserRole();
   const isAdmin = userRole === "admin";
 
-  // --- Fetch Departments ---
+  // Fetch All Departments
   const fetchDepartments = async () => {
     setIsLoading(true);
     try {
       const token = getAuthToken();
-      if (!token) {
-        alert("You are not authenticated. Please log in.");
-        setIsLoading(false);
-        return;
-      }
 
-      const response = await fetch(API_BASE_URL, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await fetch(API_BASE_URL, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch departments");
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
 
       setDepartments(data.departments || []);
-    } catch (error) {
-      console.error("Fetch Departments Error:", error);
-      alert(error.message);
+    } catch (err) {
+      console.log(err.message);
+      alert(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -54,241 +46,253 @@ export default function DepartmentPage() {
     fetchDepartments();
   }, []);
 
-  // --- Filter ---
-  const filteredDepartments = departments.filter((dep) =>
-    dep.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  // --- Add Department (Admin only) ---
-  const handleAddDepartment = async () => {
-    if (!newDept.name.trim()) {
-      alert("Department name is required!");
-      return;
-    }
+  // Add Department
+  const handleAdd = async () => {
+    if (!newDept.name.trim()) return alert("Name is required!");
 
     try {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/add`, {
+      const res = await fetch(`${API_BASE_URL}/add`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(newDept),
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to add department");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
 
-      alert(data.message || "Department added successfully!");
+      alert("Department added!");
+
       setDepartments([...departments, data.department]);
+      setShowAddModal(false);
       setNewDept({ name: "", description: "" });
-      setShowModal(false);
-    } catch (error) {
-      console.error("Add Department Error:", error);
-      alert(error.message);
+    } catch (err) {
+      alert(err.message);
     }
   };
 
-  // --- Update Department (Admin only) ---
-  const handleUpdateDepartment = async () => {
-    if (!editDept || !editDept._id) return;
-    if (!editDept.name.trim()) {
-      alert("Department name is required!");
-      return;
-    }
+  // Update
+  const handleUpdate = async () => {
+    if (!editDept.name.trim()) return alert("Name is required!");
 
     try {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/update/${editDept._id}`, {
+      const res = await fetch(`${API_BASE_URL}/update/${editDept._id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: editDept.name,
-          description: editDept.description,
-        }),
+        body: JSON.stringify(editDept),
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to update department");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
 
-      alert(data.message || "Department updated successfully!");
+      alert("Updated!");
+
       setDepartments(
         departments.map((d) => (d._id === editDept._id ? data.department : d))
       );
+
+      setShowEditModal(false);
       setEditDept(null);
-    } catch (error) {
-      console.error("Update Department Error:", error);
-      alert(error.message);
+    } catch (err) {
+      alert(err.message);
     }
   };
 
-  // --- Delete Department (Admin only) ---
+  // Delete
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this department?")) return;
+    if (!window.confirm("Delete this department?")) return;
 
     try {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/delete/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/delete/${id}`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to delete department");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
 
-      alert(data.message || "Department deleted successfully!");
       setDepartments(departments.filter((d) => d._id !== id));
-    } catch (error) {
-      console.error("Delete Department Error:", error);
-      alert(error.message);
+    } catch (err) {
+      alert(err.message);
     }
   };
 
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Manage Departments</h2>
+  // Filter Search Results
+  const filtered = departments.filter((d) =>
+    d.name.toLowerCase().includes(search.toLowerCase())
+  );
 
-      {/* Search + Add Button */}
-      <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          placeholder="Search By Department Name"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 px-3 py-2 rounded w-1/2"
-        />
+  return (
+    <div className="p-6 bg-[#0A0F1F] min-h-screen text-white">
+
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Department Management</h1>
+
         {isAdmin && (
           <button
-            onClick={() => setShowModal(true)}
-            className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded"
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 bg-teal-600 px-5 py-2 rounded-lg hover:bg-teal-700 shadow"
           >
-            Add New Department
+            <Plus size={18} />
+            Add Department
           </button>
         )}
       </div>
 
-      {/* Department List */}
-      {isLoading ? (
-        <p>Loading departments...</p>
-      ) : filteredDepartments.length === 0 ? (
-        <p className="text-gray-500">There are no records to display</p>
-      ) : (
-        <table className="w-full border border-gray-300">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border px-4 py-2 text-left">Department Name</th>
-              <th className="border px-4 py-2 text-left">Description</th>
-              {isAdmin && <th className="border px-4 py-2 text-center">Action</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredDepartments.map((dep) => (
-              <tr key={dep._id}>
-                <td className="border px-4 py-2">{dep.name}</td>
-                <td className="border px-4 py-2">{dep.description}</td>
-                {isAdmin && (
-                  <td className="border px-4 py-2 text-center space-x-2">
-                    <button
-                      onClick={() => setEditDept({ ...dep })}
-                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(dep._id)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      {/* SEARCH */}
+      <div className="mb-5">
+        <input
+          placeholder="Search Department..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-1/2 px-4 py-2 bg-[#1F2937] border border-gray-700 rounded-lg text-white"
+        />
+      </div>
 
-      {/* --- Add Modal --- */}
-      {isAdmin && showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded shadow-lg w-96">
-            <h3 className="text-xl font-semibold mb-4">Add New Department</h3>
+      {/* TABLE */}
+      <div className="bg-[#111827] rounded-xl p-6 border border-gray-700 shadow-xl">
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : filtered.length === 0 ? (
+          <p className="text-gray-400">No Departments Found</p>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr className="text-left border-b border-gray-700 text-gray-300">
+                <th className="py-3">Name</th>
+                <th className="py-3">Description</th>
+                {isAdmin && <th className="py-3 text-center">Action</th>}
+              </tr>
+            </thead>
+
+            <tbody>
+              {filtered.map((dep) => (
+                <tr key={dep._id} className="border-b border-gray-800">
+                  <td className="py-3">{dep.name}</td>
+                  <td className="py-3">{dep.description}</td>
+
+                  {isAdmin && (
+                    <td className="py-3 text-center flex gap-3 justify-center">
+                      <button
+                        onClick={() => {
+                          setEditDept(dep);
+                          setShowEditModal(true);
+                        }}
+                        className="bg-green-600 px-3 py-1 rounded-lg hover:bg-green-700"
+                      >
+                        <Pencil size={16} />
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(dep._id)}
+                        className="bg-red-600 px-3 py-1 rounded-lg hover:bg-red-700"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* ADD MODAL */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
+          <div className="bg-[#1F2937] p-6 rounded-xl border border-gray-700 w-full max-w-md">
+
+            <h2 className="text-xl font-semibold mb-4">Add Department</h2>
+
             <input
               type="text"
               placeholder="Department Name"
+              className="w-full p-3 bg-[#111827] border border-gray-600 rounded-lg text-white mb-3"
               value={newDept.name}
               onChange={(e) => setNewDept({ ...newDept, name: e.target.value })}
-              className="w-full border px-3 py-2 mb-3 rounded"
             />
+
             <textarea
               placeholder="Description"
+              className="w-full p-3 bg-[#111827] border border-gray-600 rounded-lg text-white mb-3"
               value={newDept.description}
-              onChange={(e) => setNewDept({ ...newDept, description: e.target.value })}
-              className="w-full border px-3 py-2 mb-3 rounded"
+              onChange={(e) =>
+                setNewDept({ ...newDept, description: e.target.value })
+              }
             />
-            <div className="flex justify-end gap-2">
+
+            <div className="flex justify-end gap-3">
               <button
-                onClick={() => {
-                  setShowModal(false);
-                  setNewDept({ name: "", description: "" });
-                }}
-                className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 bg-gray-600 rounded-lg"
               >
                 Cancel
               </button>
               <button
-                onClick={handleAddDepartment}
-                className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded"
+                onClick={handleAdd}
+                className="px-4 py-2 bg-teal-600 rounded-lg hover:bg-teal-700"
               >
-                Add Department
+                Add
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- Edit Modal --- */}
-      {isAdmin && editDept && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded shadow-lg w-96">
-            <h3 className="text-xl font-semibold mb-4">Edit Department</h3>
+      {/* EDIT MODAL */}
+      {showEditModal && editDept && (
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
+          <div className="bg-[#1F2937] p-6 rounded-xl border border-gray-700 w-full max-w-md">
+
+            <h2 className="text-xl font-semibold mb-4">Edit Department</h2>
+
             <input
               type="text"
-              placeholder="Department Name"
+              className="w-full p-3 bg-[#111827] border border-gray-600 rounded-lg text-white mb-3"
               value={editDept.name}
-              onChange={(e) => setEditDept({ ...editDept, name: e.target.value })}
-              className="w-full border px-3 py-2 mb-3 rounded"
+              onChange={(e) =>
+                setEditDept({ ...editDept, name: e.target.value })
+              }
             />
+
             <textarea
-              placeholder="Description"
+              className="w-full p-3 bg-[#111827] border border-gray-600 rounded-lg text-white mb-3"
               value={editDept.description}
-              onChange={(e) => setEditDept({ ...editDept, description: e.target.value })}
-              className="w-full border px-3 py-2 mb-3 rounded"
+              onChange={(e) =>
+                setEditDept({ ...editDept, description: e.target.value })
+              }
             />
-            <div className="flex justify-end gap-2">
+
+            <div className="flex justify-end gap-3">
               <button
-                onClick={() => setEditDept(null)}
-                className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 bg-gray-600 rounded-lg"
               >
                 Cancel
               </button>
+
               <button
-                onClick={handleUpdateDepartment}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                onClick={handleUpdate}
+                className="px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700"
               >
                 Save Changes
               </button>
             </div>
+
           </div>
         </div>
       )}
+
     </div>
   );
 }

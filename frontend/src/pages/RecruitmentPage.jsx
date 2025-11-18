@@ -1,110 +1,212 @@
 import React, { useEffect, useState } from "react";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, X, Edit } from "lucide-react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1";
 
-const STAGES = [
-  { key: "new", label: "New Applications" },
-  { key: "shortlisted", label: "Shortlisted" },
-  { key: "interview", label: "Interview Scheduled" },
-  { key: "offer", label: "Offer Extended" },
-  { key: "hired", label: "Hired" },
-];
+const tokenHeader = () => {
+  const t = localStorage.getItem("authToken");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+};
 
 export default function RecruitmentPage() {
-  const [applicants, setApplicants] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [jobEditOpen, setJobEditOpen] = useState(false);
 
-  const fetchApplicants = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/recruitment`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setApplicants(data.applicants || []);
-    } catch (err) {
-      console.error("Error fetching applicants:", err);
-    }
-  };
+  const [selectedJob, setSelectedJob] = useState(null);
 
-  const updateStage = async (id, newStage) => {
-    try {
-      const token = localStorage.getItem("token");
-      await fetch(`${API_BASE_URL}/recruitment/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ stage: newStage }),
-      });
-      fetchApplicants();
-    } catch (err) {
-      console.error("Error updating stage:", err);
-    }
-  };
+  const [jobForm, setJobForm] = useState({
+    title: "",
+    department: "",
+    skills: "",
+    location: "",
+    experience: "",
+    description: "",
+  });
+
+  const [jobEditForm, setJobEditForm] = useState({
+    applications: 0,
+    shortlisted: 0,
+    interviewScheduled: 0,
+    hired: 0,
+  });
 
   useEffect(() => {
-    fetchApplicants();
+    loadJobs();
   }, []);
 
-  // Group applicants by stage
-  const columns = STAGES.reduce((acc, stage) => {
-    acc[stage.key] = applicants.filter((a) => a.stage === stage.key);
-    return acc;
-  }, {});
+  const loadJobs = async () => {
+    const jRes = await fetch(`${API}/recruitment/jobs`, { headers: tokenHeader() });
+    const jData = await jRes.json();
+    setJobs(jData.jobs || []);
+  };
 
-  const onDragEnd = (result) => {
-    const { destination, source, draggableId } = result;
-    if (!destination || destination.droppableId === source.droppableId) return;
-    updateStage(draggableId, destination.droppableId);
+  const openJobEditor = (job) => {
+    setSelectedJob(job);
+    setJobEditForm({
+      applications: job.applications,
+      shortlisted: job.shortlisted,
+      interviewScheduled: job.interviewScheduled,
+      hired: job.hired,
+    });
+    setJobEditOpen(true);
+  };
+
+  const createJob = async () => {
+    const res = await fetch(`${API}/recruitment/job`, {
+      method: "POST",
+      headers: { ...tokenHeader(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...jobForm,
+        skills: jobForm.skills.split(",").map((s) => s.trim()),
+      }),
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      setJobs([data.job, ...jobs]);
+      setDrawerOpen(false);
+      setJobForm({
+        title: "",
+        department: "",
+        skills: "",
+        location: "",
+        experience: "",
+        description: "",
+      });
+    }
+  };
+
+  const saveJobEdit = async () => {
+    const res = await fetch(`${API}/recruitment/job/${selectedJob._id}`, {
+      method: "PUT",
+      headers: { ...tokenHeader(), "Content-Type": "application/json" },
+      body: JSON.stringify(jobEditForm),
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      setJobs((prev) =>
+        prev.map((j) => (j._id === selectedJob._id ? data.job : j))
+      );
+      setJobEditOpen(false);
+    }
   };
 
   return (
-    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-100 transition-colors">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Recruitment Dashboard</h2>
-        <button className="flex items-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition">
-          <PlusCircle size={18} /> New Job Posting
-        </button>
-      </div>
+    <div className="min-h-screen bg-[#0A0F1F] text-gray-100">
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {STAGES.map((stage) => (
-            <Droppable key={stage.key} droppableId={stage.key}>
-              {(provided) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow border border-gray-200 dark:border-gray-700"
-                >
-                  <h3 className="text-md font-semibold mb-3">{stage.label}</h3>
-                  {columns[stage.key].map((a, index) => (
-                    <Draggable key={a._id} draggableId={a._id} index={index}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="bg-gray-100 dark:bg-gray-700 p-3 mb-3 rounded-lg shadow-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-                        >
-                          <p className="font-semibold">{a.name}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {a.skills?.join(", ")}
-                          </p>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
+      {/* HEADER */}
+      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+        <h1 className="text-2xl font-bold">Recruitment Dashboard</h1>
+
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="flex items-center gap-2 bg-teal-600 px-4 py-2 rounded-lg"
+        >
+          <PlusCircle size={16} /> Post Job
+        </button>
+      </header>
+
+      {/* JOB CARDS — clean & compact */}
+      <section className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {jobs.map((job) => (
+          <div
+            key={job._id}
+            onClick={() => openJobEditor(job)}
+            className="bg-[#071021] hover:bg-[#0f1628] transition border border-gray-700 p-4 rounded-lg cursor-pointer"
+          >
+            <div className="flex justify-between">
+              <h2 className="text-lg font-semibold">{job.title}</h2>
+              <Edit size={18} className="text-teal-400" />
+            </div>
+
+            <p className="text-sm text-gray-400 mt-1">
+              {job.department} • {job.location}
+            </p>
+
+            <div className="mt-3 text-xs space-y-1">
+              <div>Applications: {job.applications}</div>
+              <div>Shortlisted: {job.shortlisted}</div>
+              <div>Interview: {job.interviewScheduled}</div>
+              <div>Hired: {job.hired}</div>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* JOB EDITOR DRAWER */}
+      {jobEditOpen && (
+        <div className="fixed right-0 top-0 h-full w-full max-w-md bg-[#0b1120] border-l border-gray-700 p-6">
+          <div className="flex justify-between">
+            <h2 className="text-xl font-semibold">Edit Job Stats</h2>
+            <X className="cursor-pointer" onClick={() => setJobEditOpen(false)} />
+          </div>
+
+          {Object.keys(jobEditForm).map((key) => (
+            <div className="mt-4" key={key}>
+              <label className="text-sm text-gray-400 capitalize">{key}</label>
+              <input
+                type="number"
+                value={jobEditForm[key]}
+                onChange={(e) =>
+                  setJobEditForm({ ...jobEditForm, [key]: Number(e.target.value) })
+                }
+                className="w-full p-3 rounded bg-[#0f1724] border border-gray-700"
+              />
+            </div>
           ))}
+
+          <button
+            onClick={saveJobEdit}
+            className="w-full mt-5 bg-teal-600 py-2 rounded-lg"
+          >
+            Save Changes
+          </button>
         </div>
-      </DragDropContext>
+      )}
+
+      {/* JOB CREATION DRAWER */}
+      {drawerOpen && (
+        <div className="fixed top-0 right-0 h-full w-full max-w-md bg-[#071021] p-6 border-l border-gray-700">
+          <div className="flex justify-between">
+            <h2 className="text-xl">Create Job</h2>
+            <X className="cursor-pointer" onClick={() => setDrawerOpen(false)} />
+          </div>
+
+          {["title", "department", "skills", "location", "experience"].map(
+            (field) => (
+              <div className="mt-3" key={field}>
+                <label className="text-sm text-gray-400 capitalize">{field}</label>
+                <input
+                  value={jobForm[field]}
+                  onChange={(e) =>
+                    setJobForm({ ...jobForm, [field]: e.target.value })
+                  }
+                  className="w-full p-3 rounded bg-[#0f1724] border border-gray-700"
+                />
+              </div>
+            )
+          )}
+
+          <label className="text-sm text-gray-400 mt-3">Description</label>
+          <textarea
+            rows={4}
+            value={jobForm.description}
+            onChange={(e) =>
+              setJobForm({ ...jobForm, description: e.target.value })
+            }
+            className="w-full p-3 rounded bg-[#0f1724] border border-gray-700"
+          />
+
+          <button
+            onClick={createJob}
+            className="w-full mt-5 bg-teal-600 py-2 rounded-lg"
+          >
+            Create Job
+          </button>
+        </div>
+      )}
     </div>
   );
 }

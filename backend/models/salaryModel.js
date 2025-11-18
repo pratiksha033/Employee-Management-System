@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const salarySchema = new mongoose.Schema({
   employeeId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Employee",
     required: true,
   },
   departmentId: {
@@ -13,8 +13,7 @@ const salarySchema = new mongoose.Schema({
   },
   basicSalary: {
     type: Number,
-    required: [true, "Basic salary is required"],
-    default: 0,
+    required: true,
   },
   allowances: {
     type: Number,
@@ -30,7 +29,7 @@ const salarySchema = new mongoose.Schema({
   },
   payDate: {
     type: Date,
-    required: [true, "Pay date is required"],
+    required: true,
   },
   createdAt: {
     type: Date,
@@ -38,12 +37,13 @@ const salarySchema = new mongoose.Schema({
   },
 });
 
-// Pre-save hook to calculate totalSalary
 salarySchema.pre("save", function (next) {
-  this.totalSalary = (this.basicSalary || 0) + (this.allowances || 0) - (this.deductions || 0);
+  this.totalSalary =
+    (this.basicSalary || 0) +
+    (this.allowances || 0) -
+    (this.deductions || 0);
   next();
 });
 
-const Salary = mongoose.models.Salary || mongoose.model("Salary", salarySchema);
-
-export { Salary };
+export const Salary =
+  mongoose.models.Salary || mongoose.model("Salary", salarySchema);

@@ -3,36 +3,31 @@ import { Check, X, Clock, Plus, Eye } from "lucide-react";
 import DataTable from "react-data-table-component";
 
 const API_BASE_URL = "http://localhost:4000/api/v1/leave";
-
 const getAuthToken = () => localStorage.getItem("authToken");
 
+// Calculate Days
 const calculateDays = (startDate, endDate) => {
   if (!startDate || !endDate) return "N/A";
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diffTime = Math.abs(end - start);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays + 1;
+  const diff = (new Date(endDate) - new Date(startDate)) / (1000 * 3600 * 24);
+  return diff + 1;
 };
 
+// Status Badge
 const StatusBadge = ({ status }) => {
-  let colorClass = "";
+  let color = "";
   let Icon = Clock;
-  switch (status) {
-    case "Approved":
-      colorClass = "bg-green-100 text-green-800";
-      Icon = Check;
-      break;
-    case "Rejected":
-      colorClass = "bg-red-100 text-red-800";
-      Icon = X;
-      break;
-    default:
-      colorClass = "bg-yellow-100 text-yellow-800";
-      Icon = Clock;
+  if (status === "Approved") {
+    color = "bg-green-500/20 text-green-400 border border-green-500/40";
+    Icon = Check;
+  } else if (status === "Rejected") {
+    color = "bg-red-500/20 text-red-400 border border-red-500/40";
+    Icon = X;
+  } else {
+    color = "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40";
   }
+
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+    <span className={`flex items-center px-3 py-1 rounded-full text-xs font-medium ${color}`}>
       <Icon size={14} className="mr-1" />
       {status}
     </span>
@@ -43,162 +38,141 @@ export default function LeavePage({ user }) {
   const [leaves, setLeaves] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+
   const [newLeave, setNewLeave] = useState({
     startDate: "",
     endDate: "",
     leaveType: "",
     reason: "",
   });
+
   const [filter, setFilter] = useState("All");
   const [searchId, setSearchId] = useState("");
 
-  const isEmployee = user?.role === "employee";
   const isAdmin = user?.role === "admin";
+  const isEmployee = user?.role === "employee";
 
-  // --- Fetch Leaves ---
+  // Fetch Leaves
   const fetchLeaves = async () => {
-    if (!user) return;
-    setIsLoading(true);
     const endpoint = isAdmin ? "/all" : "/my-leaves";
+    setIsLoading(true);
 
     try {
-      const token = getAuthToken();
       const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to fetch leaves");
+      if (!res.ok) throw new Error(data.message);
       setLeaves(data.leaves || []);
     } catch (err) {
-      console.error("Fetch Leaves Error:", err.message);
+      console.log("Fetch Leaves Error:", err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLeaves();
+    if (user) fetchLeaves();
   }, [user]);
 
-  // --- Apply for Leave ---
+  // Apply Leave
   const handleApplyLeave = async () => {
-    const { startDate, endDate, reason, leaveType } = newLeave;
-    if (!startDate || !endDate || !reason || !leaveType) {
-      alert("Please fill in all fields.");
-      return;
-    }
-
     try {
-      const token = getAuthToken();
       const res = await fetch(`${API_BASE_URL}/apply`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${getAuthToken()}`,
         },
-        body: JSON.stringify({ ...newLeave, department: user.department }), // ✅ Include department
+        body: JSON.stringify({ ...newLeave, department: user.department }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to apply for leave");
+      if (!res.ok) throw new Error(data.message);
 
-      alert("Leave applied successfully!");
-      setNewLeave({ startDate: "", endDate: "", reason: "", leaveType: "" });
+      alert("Leave Applied Successfully!");
       setShowModal(false);
       fetchLeaves();
     } catch (err) {
-      console.error("Apply Leave Error:", err.message);
+      console.log(err.message);
     }
   };
 
-  // --- Update Leave Status (Admin only) ---
-  const handleUpdateStatus = async (id, status) => {
-    if (!isAdmin) return;
-
+  // Update Status (Admin)
+  const updateStatus = async (id, status) => {
     try {
-      const token = getAuthToken();
       const res = await fetch(`${API_BASE_URL}/update/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${getAuthToken()}`,
         },
         body: JSON.stringify({ status }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || `Failed to update leave status`);
-
-      console.log(`Leave ${status} successfully!`);
+      await res.json();
       fetchLeaves();
     } catch (err) {
-      console.error("Update Leave Status Error:", err.message);
+      console.log(err.message);
     }
   };
 
-  // --- Filter logic for Admin ---
-  const filteredLeaves = leaves.filter((leave) => {
-    const matchesStatus = filter === "All" || leave.status === filter;
-    const matchesSearch =
+  // Filters
+  const filteredLeaves = leaves.filter((l) => {
+    const s1 = filter === "All" || l.status === filter;
+    const s2 =
       !searchId ||
-      (leave.employeeId &&
-        leave.employeeId.empId &&
-        leave.employeeId.empId.toLowerCase().includes(searchId.toLowerCase()));
-    return matchesStatus && matchesSearch;
+      l.employeeId?.empId?.toLowerCase().includes(searchId.toLowerCase());
+    return s1 && s2;
   });
 
-  // --- Table Columns ---
+  // Table Columns
   const columns = [
-    { name: "S.No", selector: (row, i) => i + 1, width: "80px" },
+    { name: "S.No", selector: (row, i) => i + 1, width: "70px" },
+
     ...(isAdmin
       ? [
-          {
-            name: "Emp ID",
-            selector: (row) => row.employeeId?.empId || "N/A",
-          },
-          {
-            name: "Name",
-            selector: (row) => row.employeeId?.name || "N/A",
-          },
+          { name: "Emp ID", selector: (row) => row.employeeId?.empId || "N/A" },
+          { name: "Name", selector: (row) => row.employeeId?.name || "N/A" },
         ]
       : []),
-    { name: "Leave Type", selector: (row) => row.leaveType || "N/A" },
-    { name: "Department", selector: (row) => row.employeeId?.department || row.department || "N/A" },
+
+    { name: "Leave Type", selector: (row) => row.leaveType },
+    {
+      name: "Department",
+      selector: (row) => row.employeeId?.department || row.department,
+    },
     { name: "Days", selector: (row) => calculateDays(row.startDate, row.endDate) },
+
     {
       name: "Status",
       cell: (row) => <StatusBadge status={row.status} />,
     },
+
     {
-      name: "Action",
+      name: "Actions",
       cell: (row) => (
         <div className="flex gap-2">
           {isAdmin && row.status === "Pending" && (
             <>
               <button
-                onClick={() => handleUpdateStatus(row._id, "Approved")}
-                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-xs"
-                title="Approve"
+                onClick={() => updateStatus(row._id, "Approved")}
+                className="bg-green-600/80 hover:bg-green-700 text-white px-3 py-1 rounded-lg"
               >
                 <Check size={14} />
               </button>
+
               <button
-                onClick={() => handleUpdateStatus(row._id, "Rejected")}
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-xs"
-                title="Reject"
+                onClick={() => updateStatus(row._id, "Rejected")}
+                className="bg-red-600/80 hover:bg-red-700 text-white px-3 py-1 rounded-lg"
               >
                 <X size={14} />
               </button>
             </>
           )}
-          <button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-xs"
-            title="View"
-          >
+
+          <button className="bg-blue-600/80 hover:bg-blue-700 text-white px-3 py-1 rounded-lg">
             <Eye size={14} />
           </button>
         </div>
@@ -207,94 +181,101 @@ export default function LeavePage({ user }) {
   ];
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">
-          {isAdmin ? "Manage Leaves" : "My Leave Applications"}
-        </h2>
+    <div className="p-6 text-white bg-[#0A0F1F] min-h-screen">
+
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">
+          {isAdmin ? "Leave Management" : "My Leave Applications"}
+        </h1>
+
         {isEmployee && (
           <button
             onClick={() => setShowModal(true)}
-            className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg shadow flex items-center"
+            className="bg-teal-600 px-5 py-2 rounded-lg flex items-center gap-2 hover:bg-teal-700 shadow"
           >
-            <Plus size={20} className="mr-1" />
-            Apply for Leave
+            <Plus size={18} />
+            Apply Leave
           </button>
         )}
       </div>
 
       {/* Admin Filters */}
       {isAdmin && (
-        <div className="mb-4 flex items-center justify-between">
+        <div className="flex justify-between mb-6">
           <input
-            type="text"
-            placeholder="Search By Emp ID"
+            placeholder="Search by Emp ID"
+            className="px-3 py-2 rounded-lg bg-[#1F2937] border border-gray-700 w-1/4"
             value={searchId}
             onChange={(e) => setSearchId(e.target.value)}
-            className="border border-gray-300 px-3 py-2 rounded-lg w-1/4"
           />
+
           <div className="flex gap-2">
-            {["All", "Pending", "Approved", "Rejected"].map((status) => (
+            {["All", "Pending", "Approved", "Rejected"].map((s) => (
               <button
-                key={status}
-                onClick={() => setFilter(status)}
+                key={s}
+                onClick={() => setFilter(s)}
                 className={`px-4 py-2 rounded-lg ${
-                  filter === status
+                  filter === s
                     ? "bg-teal-600 text-white"
-                    : "bg-gray-200 text-gray-700"
+                    : "bg-[#1F2937] text-gray-300 border border-gray-700"
                 }`}
               >
-                {status}
+                {s}
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Data Table */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      {/* Table */}
+      <div className="bg-[#111827] rounded-xl p-4 shadow-xl border border-gray-700">
         <DataTable
           columns={columns}
           data={isAdmin ? filteredLeaves : leaves}
           progressPending={isLoading}
           pagination
           highlightOnHover
+          theme="dark"
         />
       </div>
 
-      {/* Modal for Apply Leave */}
+      {/* Apply Leave Modal */}
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Apply for Leave</h3>
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
+          <div className="bg-[#111827] p-6 rounded-xl shadow-xl border border-gray-700 w-full max-w-md">
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <h2 className="text-xl font-semibold mb-4 text-white">
+              Apply for Leave
+            </h2>
+
+            {/* Form */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <input
                   type="date"
+                  className="p-3 bg-[#1F2937] rounded-lg border border-gray-600 text-white"
                   value={newLeave.startDate}
-                  onChange={(e) => setNewLeave({ ...newLeave, startDate: e.target.value })}
-                  className="w-full border-gray-300 rounded-lg"
+                  onChange={(e) =>
+                    setNewLeave({ ...newLeave, startDate: e.target.value })
+                  }
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
                 <input
                   type="date"
+                  className="p-3 bg-[#1F2937] rounded-lg border border-gray-600 text-white"
                   value={newLeave.endDate}
-                  onChange={(e) => setNewLeave({ ...newLeave, endDate: e.target.value })}
-                  className="w-full border-gray-300 rounded-lg"
+                  onChange={(e) =>
+                    setNewLeave({ ...newLeave, endDate: e.target.value })
+                  }
                 />
               </div>
-            </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
               <select
+                className="p-3 bg-[#1F2937] rounded-lg border border-gray-600 text-white w-full"
                 value={newLeave.leaveType}
-                onChange={(e) => setNewLeave({ ...newLeave, leaveType: e.target.value })}
-                className="w-full border-gray-300 rounded-lg"
+                onChange={(e) =>
+                  setNewLeave({ ...newLeave, leaveType: e.target.value })
+                }
               >
                 <option value="">Select Leave Type</option>
                 <option value="Sick Leave">Sick Leave</option>
@@ -302,33 +283,34 @@ export default function LeavePage({ user }) {
                 <option value="Annual Leave">Annual Leave</option>
                 <option value="Unpaid Leave">Unpaid Leave</option>
               </select>
-            </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
               <textarea
-                value={newLeave.reason}
-                onChange={(e) => setNewLeave({ ...newLeave, reason: e.target.value })}
-                className="w-full border-gray-300 rounded-lg"
                 rows="3"
-                placeholder="Enter reason for leave"
+                placeholder="Enter Reason"
+                className="p-3 bg-[#1F2937] rounded-lg border border-gray-600 text-white w-full"
+                value={newLeave.reason}
+                onChange={(e) =>
+                  setNewLeave({ ...newLeave, reason: e.target.value })
+                }
               />
             </div>
 
-            <div className="flex justify-end gap-3">
+            {/* Buttons */}
+            <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowModal(false)}
-                className="bg-gray-200 px-4 py-2 rounded-lg"
+                className="px-4 py-2 bg-gray-600 rounded-lg text-white"
               >
                 Cancel
               </button>
               <button
                 onClick={handleApplyLeave}
-                className="bg-teal-600 text-white px-4 py-2 rounded-lg"
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 rounded-lg text-white"
               >
-                Submit Application
+                Submit
               </button>
             </div>
+
           </div>
         </div>
       )}
