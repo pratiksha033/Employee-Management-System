@@ -6,21 +6,20 @@ import { catchAsyncError } from "../middleware/catchAsyncError.js";
 import { Employee } from "../models/employeeSchema.js";
 
 export const downloadPayslip = catchAsyncError(async (req, res, next) => {
-	const payroll = await Payroll.findById(req.params.id).populate("employee", "name email");
+	const payroll = await Payroll.findById(req.params.id).populate("employee"); // Employee object
 
 	if (!payroll) {
 		return next(new ErrorHandler("Payslip not found", 404));
 	}
 
-	// ---- Fetch Employee full data ----
-	const empData = await Employee.findById(payroll.employee);
+	const empData = payroll.employee;
 
 	if (!empData) {
 		return next(new ErrorHandler("Employee data not found", 404));
 	}
 
-	// Authorization
-	if (req.user.role === "employee" && payroll.employee._id.toString() !== req.user._id.toString()) {
+	// Authorization: employee can only download their own payslip
+	if (req.user.role === "employee" && empData.user.toString() !== req.user._id.toString()) {
 		return next(new ErrorHandler("Access denied", 403));
 	}
 
@@ -28,10 +27,7 @@ export const downloadPayslip = catchAsyncError(async (req, res, next) => {
 	const doc = new PDFDocument({ size: "A4", margin: 50 });
 
 	res.setHeader("Content-Type", "application/pdf");
-	res.setHeader(
-		"Content-Disposition",
-		`attachment; filename=payslip-${payroll._id}.pdf`
-	);
+	res.setHeader("Content-Disposition", `attachment; filename=payslip-${payroll._id}.pdf`);
 
 	doc.pipe(res);
 
@@ -39,9 +35,7 @@ export const downloadPayslip = catchAsyncError(async (req, res, next) => {
 	const employeeName = empData.name || "N/A";
 	const employeeEmail = empData.email || "N/A";
 	const month = payroll.month || "N/A";
-	const generatedAt = payroll.generatedAt
-		? new Date(payroll.generatedAt).toLocaleString("en-IN")
-		: "N/A";
+	const generatedAt = payroll.generatedAt ? new Date(payroll.generatedAt).toLocaleString("en-IN") : "N/A";
 
 	const baseSalary = Number(payroll.baseSalary || 0);
 	const bonus = Number(payroll.bonus || 0);
@@ -53,10 +47,7 @@ export const downloadPayslip = catchAsyncError(async (req, res, next) => {
 	// ---------- HEADER ----------
 	doc.font("Helvetica-Bold").fontSize(22).text("Company Name Pvt. Ltd.", { align: "center" });
 
-	doc.font("Helvetica")
-		.fontSize(10)
-		.text("Address Line 1, Address Line 2, City, State - Pincode", { align: "center" })
-		.moveDown(0.5);
+	doc.font("Helvetica").fontSize(10).text("Address Line 1, Address Line 2, City, State - Pincode", { align: "center" }).moveDown(0.5);
 
 	doc.font("Helvetica-Bold").fontSize(16).text("PAYSLIP", { align: "center" });
 
@@ -66,7 +57,9 @@ export const downloadPayslip = catchAsyncError(async (req, res, next) => {
 	const pageWidth = doc.page.width;
 	const { left, right } = doc.page.margins;
 
-	doc.moveTo(left, doc.y).lineTo(pageWidth - right, doc.y).stroke();
+	doc.moveTo(left, doc.y)
+		.lineTo(pageWidth - right, doc.y)
+		.stroke();
 	doc.moveDown(0.8);
 
 	// ---------- EMPLOYEE INFO TABLE ----------
@@ -80,9 +73,11 @@ export const downloadPayslip = catchAsyncError(async (req, res, next) => {
 		const padding = 5;
 		const labelWidth = 80;
 
-		doc.font("Helvetica-Bold").fontSize(11).text(labelLeft, tableLeft + padding, y + padding, {
-			width: labelWidth,
-		});
+		doc.font("Helvetica-Bold")
+			.fontSize(11)
+			.text(labelLeft, tableLeft + padding, y + padding, {
+				width: labelWidth,
+			});
 
 		doc.font("Helvetica")
 			.fontSize(11)
@@ -106,7 +101,9 @@ export const downloadPayslip = catchAsyncError(async (req, res, next) => {
 				});
 		}
 
-		doc.moveTo(tableLeft, y + rowHeight).lineTo(tableLeft + tableWidth, y + rowHeight).stroke();
+		doc.moveTo(tableLeft, y + rowHeight)
+			.lineTo(tableLeft + tableWidth, y + rowHeight)
+			.stroke();
 	};
 
 	// Outer border of info table
@@ -142,11 +139,17 @@ export const downloadPayslip = catchAsyncError(async (req, res, next) => {
 	doc.rect(tableLeft, earnDedTop, colWidth, boxHeight).stroke();
 	doc.rect(tableLeft + colWidth, earnDedTop, colWidth, boxHeight).stroke();
 
-	doc.font("Helvetica-Bold").fontSize(12).text("Earnings", tableLeft + 5, earnDedTop + 5);
-	doc.font("Helvetica-Bold").fontSize(12).text("Deductions", tableLeft + colWidth + 5, earnDedTop + 5);
+	doc.font("Helvetica-Bold")
+		.fontSize(12)
+		.text("Earnings", tableLeft + 5, earnDedTop + 5);
+	doc.font("Helvetica-Bold")
+		.fontSize(12)
+		.text("Deductions", tableLeft + colWidth + 5, earnDedTop + 5);
 
 	const drawAmountRow = (label, amount, x, y) => {
-		doc.font("Helvetica").fontSize(11).text(label, x + 5, y + 5);
+		doc.font("Helvetica")
+			.fontSize(11)
+			.text(label, x + 5, y + 5);
 
 		doc.font("Helvetica-Bold")
 			.fontSize(11)
@@ -155,7 +158,9 @@ export const downloadPayslip = catchAsyncError(async (req, res, next) => {
 				align: "right",
 			});
 
-		doc.moveTo(x, y + rowHeight).lineTo(x + colWidth, y + rowHeight).stroke();
+		doc.moveTo(x, y + rowHeight)
+			.lineTo(x + colWidth, y + rowHeight)
+			.stroke();
 	};
 
 	let earnRowY = earnDedTop + rowHeight;
@@ -183,22 +188,20 @@ export const downloadPayslip = catchAsyncError(async (req, res, next) => {
 
 	doc.rect(tableLeft, netBoxTop, tableWidth, netBoxHeight).stroke();
 
-	doc.font("Helvetica-Bold").fontSize(14).text("Net Amount Payable", tableLeft + 10, netBoxTop + 10);
+	doc.font("Helvetica-Bold")
+		.fontSize(14)
+		.text("Net Amount Payable", tableLeft + 10, netBoxTop + 10);
 
 	doc.font("Helvetica-Bold")
 		.fontSize(14)
-		.text(`₹${netPay.toLocaleString("en-IN")}`, tableLeft + tableWidth - 160, netBoxTop + 10, {
+		.text(`${netPay.toLocaleString("en-IN")}`, tableLeft + tableWidth - 160, netBoxTop + 10, {
 			width: 150,
 			align: "right",
 		});
 
 	doc.font("Helvetica")
 		.fontSize(10)
-		.text(
-			"This is a system-generated payslip and does not require a signature.",
-			left,
-			netBoxTop + netBoxHeight + 20
-		);
+		.text("This is a system-generated payslip and does not require a signature.", left, netBoxTop + netBoxHeight + 20);
 
 	doc.end();
 });
