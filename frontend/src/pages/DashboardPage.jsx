@@ -2,27 +2,23 @@ import React, { useState, useEffect } from "react";
 import {
   Users,
   Building2,
-  IndianRupee,
   Clock,
   CheckCircle,
   XCircle,
   UserCheck,
   ServerCrash,
 } from "lucide-react";
-
-// --- Helper: Get Auth Token ---
-const getAuthToken = () => localStorage.getItem("authToken");
-
-// --- Helper: Format Currency in INR ---
-const formatCurrency = (amount) => {
-  if (amount === undefined || amount === null) return "N/A";
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  }).format(amount);
-};
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  LineChart,
+  Line,
+  ResponsiveContainer,
+} from "recharts";
 
 // --- Reusable Stat Card Component ---
 const StatCard = ({ title, value, icon, colorClass }) => (
@@ -37,14 +33,13 @@ const StatCard = ({ title, value, icon, colorClass }) => (
   </div>
 );
 
-// --- Admin Dashboard View ---
+// --- Admin Dashboard ---
 const AdminDashboard = ({ user }) => {
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // ✅ TEMP FIX: Use dummy data to check frontend rendering
     const timer = setTimeout(() => {
       setStats({
         totalEmployees: 8,
@@ -81,6 +76,18 @@ const AdminDashboard = ({ user }) => {
       </div>
     );
 
+  // Data for Charts
+  const leaveData = [
+    { type: "Pending", count: stats.pendingLeaves },
+    { type: "Approved", count: stats.approvedLeaves },
+    { type: "Rejected", count: stats.rejectedLeaves },
+  ];
+
+  const deptData = stats.departmentCounts.map((d) => ({
+    name: d.departmentName,
+    Employees: d.count,
+  }));
+
   return (
     <div className="p-6 space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
@@ -99,67 +106,50 @@ const AdminDashboard = ({ user }) => {
           icon={<Building2 size={36} />}
           colorClass="bg-blue-600"
         />
+        <StatCard
+          title="Total Leaves"
+          value={stats.pendingLeaves + stats.approvedLeaves + stats.rejectedLeaves}
+          icon={<CheckCircle size={36} />}
+          colorClass="bg-purple-600"
+        />
       </div>
 
       {/* Leave Overview */}
-      <h2 className="text-xl font-semibold text-gray-700">Leave Overview</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard
-          title="Pending Leaves"
-          value={stats.pendingLeaves}
-          icon={<Clock size={32} />}
-          colorClass="bg-yellow-500"
-        />
-        <StatCard
-          title="Approved Leaves"
-          value={stats.approvedLeaves}
-          icon={<CheckCircle size={32} />}
-          colorClass="bg-green-500"
-        />
-        <StatCard
-          title="Rejected Leaves"
-          value={stats.rejectedLeaves}
-          icon={<XCircle size={32} />}
-          colorClass="bg-red-500"
-        />
-      </div>
+      <h2 className="text-xl font-semibold text-gray-700 mt-6">Leaves Overview</h2>
+      <ResponsiveContainer width="100%" height={250}>
+        <BarChart data={leaveData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+          <XAxis dataKey="type" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="count" fill="#facc15" />
+        </BarChart>
+      </ResponsiveContainer>
 
       {/* Employees per Department */}
-      <h2 className="text-xl font-semibold text-gray-700">
+      <h2 className="text-xl font-semibold text-gray-700 mt-6">
         Employees per Department
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.departmentCounts?.length ? (
-          stats.departmentCounts.map((dept) => (
-            <div
-              key={dept.departmentName}
-              className="rounded-lg bg-white shadow p-4 flex items-center justify-between"
-            >
-              <div>
-                <p className="text-sm text-gray-600">{dept.departmentName}</p>
-                <h3 className="text-2xl font-bold text-gray-800">{dept.count}</h3>
-              </div>
-              <UserCheck size={32} className="text-teal-500" />
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500 col-span-full">
-            No employees assigned to departments yet.
-          </p>
-        )}
-      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={deptData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" dataKey="Employees" stroke="#14b8a6" strokeWidth={3} />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 };
 
-// --- Employee Dashboard View ---
+// --- Employee Dashboard ---
 const EmployeeDashboard = ({ user }) => {
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // ✅ TEMP FIX: Dummy data for employee view
     const timer = setTimeout(() => {
       setStats({
         totalEmployees: 8,
@@ -193,6 +183,11 @@ const EmployeeDashboard = ({ user }) => {
       </div>
     );
 
+  const deptData = stats.departmentCounts.map((d) => ({
+    name: d.departmentName,
+    Employees: d.count,
+  }));
+
   return (
     <div className="p-6 space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">
@@ -215,21 +210,19 @@ const EmployeeDashboard = ({ user }) => {
         />
       </div>
 
-      {/* Department Breakdown */}
-      <h2 className="text-xl font-semibold text-gray-700">
+      {/* Employees per Department */}
+      <h2 className="text-xl font-semibold text-gray-700 mt-6">
         Employees per Department
       </h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.departmentCounts?.map((dept) => (
-          <div
-            key={dept.departmentName}
-            className="rounded-lg border p-4 text-center shadow-sm bg-white"
-          >
-            <p className="text-sm text-gray-500">{dept.departmentName}</p>
-            <h3 className="text-xl font-bold text-gray-800">{dept.count}</h3>
-          </div>
-        ))}
-      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={deptData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="Employees" fill="#14b8a6" />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 };
