@@ -75,8 +75,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userName');
+    localStorage.clear();
     setUser(null);
     setView('login');
     alert('You have been logged out.');

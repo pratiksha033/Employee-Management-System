@@ -3,7 +3,6 @@ import axios from "axios";
 
 const API_BASE_URL = "http://localhost:4000/api/v1";
 
-// Auth config helper
 const getAuthConfig = () => {
   const token = localStorage.getItem("token") || "";
   return {
@@ -48,66 +47,56 @@ const PayrollPage = () => {
     }
   };
 
-  // Fetch employees for selected department
-  const fetchEmployeesByDepartment = async (deptId) => {
-    if (!deptId) return setEmployees([]);
+  // Fetch all employees
+  const fetchEmployees = async () => {
     try {
-      const res = await axios.get(
-        `${API_BASE_URL}/payroll/department/${deptId}/employees` , // <- adjusted route
-        getAuthConfig()
-      );
+      const res = await axios.get(`${API_BASE_URL}/employee/all`, getAuthConfig());
       setEmployees(res.data.employees || []);
+      // console.log("Fetched employees:", res.data.employees); // Debug log
     } catch (err) {
-      console.error("Error fetching employees by department:", err.response?.data || err);
+      console.error("Error fetching employees:", err.response?.data || err);
       setEmployees([]);
     }
   };
 
   useEffect(() => {
     fetchDepartments();
+    fetchEmployees();
     fetchPayrolls();
   }, []);
-  // 1️⃣ Add employees fetching function
-const fetchEmployees = async () => {
-  try {
-    const res = await axios.get(`${API_BASE_URL}/employee/all`, getAuthConfig());
-    setEmployees(res.data.employees || []);
-  } catch (err) {
-    console.error("Error fetching employees:", err.response?.data || err);
-    setEmployees([]);
-  }
-};
 
-// 2️⃣ Call it in useEffect along with departments
-useEffect(() => {
-  fetchDepartments();
-  fetchEmployees(); // ✅ fetch all employees
-  fetchPayrolls();
-}, []);
+  // Debug filtered employees
+  const filteredEmployees = selectedDepartment
+    ? employees.filter((emp) => {
+        const matches = emp.department?._id === selectedDepartment;
+        
+        return matches;
+      })
+    : [];
 
-// 3️⃣ Filter employees when a department is selected
-const filteredEmployees = selectedDepartment
-  ? employees.filter((emp) => emp.department?._id === selectedDepartment)
-  : [];
-
+  // console.log("Filtered employees:", filteredEmployees); // Debug log
 
   // Handle department change
   const handleDepartmentChange = (e) => {
     const deptId = e.target.value;
+    // console.log("Department changed to:", deptId); // Debug log
     setSelectedDepartment(deptId);
-    setForm({ ...form, employeeId: "" });
-    fetchEmployeesByDepartment(deptId);
+    setForm({ ...form, employeeId: "" }); // Reset employee selection
   };
 
   // Handle form input
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // console.log(`Form field ${name} changed to:`, value); // Debug log
+    setForm({ ...form, [name]: value });
   };
 
   // Submit payroll
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // console.log("Form submitted:", form); // Debug log
     try {
+      // console.log(form);
       await axios.post(`${API_BASE_URL}/payroll/generate`, form, getAuthConfig());
       alert("Payroll generated successfully!");
       setForm({
@@ -120,7 +109,6 @@ const filteredEmployees = selectedDepartment
         leaveDeductions: "",
       });
       setSelectedDepartment("");
-      setEmployees([]);
       fetchPayrolls();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to generate payroll");
@@ -171,21 +159,23 @@ const filteredEmployees = selectedDepartment
           <div>
             <label className="block mb-2 font-medium">Select Employee</label>
             <select
-  name="employeeId"
-  value={form.employeeId}
-  onChange={handleChange}
-  disabled={!selectedDepartment}
-  className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500"
-  required
->
-  <option value="">-- Select Employee --</option>
-  {filteredEmployees.map((emp) => (
-    <option key={emp._id} value={emp._id}>
-      {emp.name} ({emp.email})
-    </option>
-  ))}
-</select>
-
+              name="employeeId"
+              value={form.employeeId}
+              onChange={handleChange}
+              disabled={!selectedDepartment}
+              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="">-- Select Employee --</option>
+              {filteredEmployees.map((emp) => (
+                <option key={emp._id} value={emp._id}>
+                  {emp.name} ({emp.email})
+                </option>
+              ))}
+            </select>
+            {selectedDepartment && filteredEmployees.length === 0 && (
+              <p className="text-red-400 text-sm mt-1">No employees found in this department</p>
+            )}
           </div>
 
           {/* Month */}
@@ -196,7 +186,7 @@ const filteredEmployees = selectedDepartment
               name="month"
               value={form.month}
               onChange={handleChange}
-              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -209,7 +199,7 @@ const filteredEmployees = selectedDepartment
               name="baseSalary"
               value={form.baseSalary}
               onChange={handleChange}
-              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -222,7 +212,7 @@ const filteredEmployees = selectedDepartment
               name="bonus"
               value={form.bonus}
               onChange={handleChange}
-              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -234,7 +224,7 @@ const filteredEmployees = selectedDepartment
               name="overtimePay"
               value={form.overtimePay}
               onChange={handleChange}
-              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -246,7 +236,7 @@ const filteredEmployees = selectedDepartment
               name="tax"
               value={form.tax}
               onChange={handleChange}
-              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -258,14 +248,14 @@ const filteredEmployees = selectedDepartment
               name="leaveDeductions"
               value={form.leaveDeductions}
               onChange={handleChange}
-              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+              className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div className="col-span-2">
             <button
               type="submit"
-              className="w-full bg-teal-600 hover:bg-teal-700 p-3 rounded-lg font-bold shadow-md"
+              className="w-full bg-teal-600 hover:bg-teal-700 p-3 rounded-lg font-bold shadow-md transition duration-200"
             >
               Generate Payroll
             </button>
@@ -277,7 +267,7 @@ const filteredEmployees = selectedDepartment
       <div className="max-w-5xl mx-auto mt-10 bg-[#161b22] p-6 rounded-xl border border-gray-700">
         <h2 className="text-2xl font-bold text-teal-400 mb-4">All Payrolls</h2>
         {payrolls.length === 0 ? (
-          <p>No payrolls generated yet</p>
+          <p className="text-gray-400">No payrolls generated yet</p>
         ) : (
           <table className="w-full border-collapse border border-gray-600">
             <thead>
@@ -290,14 +280,14 @@ const filteredEmployees = selectedDepartment
             </thead>
             <tbody>
               {payrolls.map((p) => (
-                <tr key={p._id} className="border border-gray-600">
-                  <td className="p-2 border">{p.employeeName}</td>
-                  <td className="p-2 border">{p.month}</td>
-                  <td className="p-2 border">₹{p.netPay}</td>
-                  <td className="p-2 border">
+                <tr key={p._id} className="border border-gray-600 hover:bg-gray-800">
+                  <td className="p-2 border border-gray-600">{p.employeeName}</td>
+                  <td className="p-2 border border-gray-600">{p.month}</td>
+                  <td className="p-2 border border-gray-600">₹{p.netPay}</td>
+                  <td className="p-2 border border-gray-600">
                     <button
                       onClick={() => downloadPayslip(p._id)}
-                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md"
+                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition duration-200"
                     >
                       Download Payslip
                     </button>

@@ -2,7 +2,7 @@ import { Payroll } from "../models/payrollSchema.js";
 import { User } from "../models/userSchema.js";
 import { catchAsyncError } from "../middleware/catchAsyncError.js";
 import ErrorHandler from "../middleware/error.js";
-
+import { Employee } from "../models/employeeSchema.js";
 // =============================
 // Admin: Generate Payroll
 // =============================
@@ -14,7 +14,7 @@ export const generatePayroll = catchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler("Employee, Month, and Base Salary are required", 400));
   }
 
-  const employee = await User.findById(employeeId);
+  const employee = await Employee.findById(employeeId);
   if (!employee) return next(new ErrorHandler("Employee not found", 404));
 
   const payroll = await Payroll.create({
@@ -55,12 +55,13 @@ export const getMyPayrolls = catchAsyncError(async (req, res, next) => {
 // Admin: Get Employees by Department
 // =============================
 export const getEmployeesByDepartment = catchAsyncError(async (req, res, next) => {
+    // console.log("hello");
   const { departmentId } = req.params;
   if (!departmentId) return next(new ErrorHandler("Department ID required", 400));
-
-  const employees = await User.find({ department: departmentId, role: "employee" }).select(
+  
+  const employees = await Employee.find({ "department": departmentId }).select(
     "_id name email"
   );
-
+//   console.log("employee  ",employees);
   res.status(200).json({ success: true, employees });
 });
