@@ -25,7 +25,7 @@ export default function App() {
 
   // Check auth on mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('authToken');
     const userName = localStorage.getItem('userName');
     const userRole = localStorage.getItem('userRole');
     if (token && userName) {
@@ -44,7 +44,7 @@ export default function App() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Login failed');
 
-      localStorage.setItem('token', data.token);
+      localStorage.setItem('authToken', data.token);
       localStorage.setItem('userName', data.user.name);
       localStorage.setItem('userRole', data.user.role);
       setUser({ name: data.user.name, email: data.user.email, role: data.user.role });

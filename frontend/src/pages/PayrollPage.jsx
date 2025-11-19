@@ -4,7 +4,7 @@ import axios from "axios";
 const API_BASE_URL = "http://localhost:4000/api/v1";
 
 const getAuthConfig = () => {
-  const token = localStorage.getItem("token") || "";
+  const token = localStorage.getItem("authToken") || "";
   return {
     headers: { Authorization: token ? `Bearer ${token}` : "" },
     withCredentials: true,
