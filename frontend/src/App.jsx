@@ -23,6 +23,7 @@ export default function App() {
     }
   }, [darkMode]);
 
+
   // Check auth on mount
   useEffect(() => {
     const token = localStorage.getItem('authToken');

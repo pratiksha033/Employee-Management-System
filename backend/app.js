@@ -48,7 +48,6 @@ app.use("/api/v1/recruitment", recruitmentRoutes);
 app.use("/api/v1/payroll", payrollRoutes);
 app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/reward", rewardRoutes);
-
 // Error handling middleware
 app.use(errorMiddleware);
 

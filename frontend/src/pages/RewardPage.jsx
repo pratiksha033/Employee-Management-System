@@ -39,6 +39,7 @@ export default function RewardsPage({ user }) {
         setAllRewards(rewardRes.data?.rewards || []);
 
         const empRes = await axios.get(`${API_BASE_URL}/employee/all`, config);
+        console.log("Employee API Response:", empRes.data);
         setEmployees(empRes.data?.employees || []);
       }
 
