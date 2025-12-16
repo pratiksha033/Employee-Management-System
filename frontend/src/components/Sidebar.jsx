@@ -29,7 +29,9 @@ export default function Sidebar({ activePage, setActivePage, onLogout, user }) {
          
         ]
       : []),
+
     { key: "department", label: "Department", icon: <Building2 size={20} /> },
+    { key: "attendance", label: "Attendance", icon: <CalendarCheck size={20} /> },
     { key: "rewards", label: "Rewards", icon: <Gift size={20} /> },
     { key: "leave", label: "Leave", icon: <CalendarCheck size={20} /> },
     { key: "salary", label: "Salary", icon: <DollarSign size={20} /> },

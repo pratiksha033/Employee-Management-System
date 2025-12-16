@@ -32,7 +32,7 @@ export const getAttendanceByDate = async (req, res) => {
 
     const attendanceMap = {};
     records.forEach((r) => {
-      attendanceMap[r.employeeId] = r.status;
+      attendanceMap[r.employeeId.toString()] = r.status;
     });
 
     res.json({ success: true, attendance: attendanceMap });

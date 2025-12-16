@@ -31,9 +31,9 @@ export default function DashboardLayout({ user, onLogout }) {
       case "employee":
         return user?.role === "admin" ? <EmployeePage user={user} /> : <AccessDenied />;
       case "attendance":
-        return user?.role === "admin" ? <AttendancePage user={user} /> : <AccessDenied />;
+        return <AttendancePage user={user} />;
       case "payroll":
-        return user?.role === "admin" ? <PayrollPage user={user} /> : <AccessDenied />;
+        return <PayrollPage user={user} />;
       case "payslips":
         return user?.role === "admin" ? <PaySlips user={user} /> : <AccessDenied />;
       case "recruitment":
