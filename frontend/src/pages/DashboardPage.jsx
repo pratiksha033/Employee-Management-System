@@ -62,6 +62,8 @@ const AdminDashboard = ({ user }) => {
 
   useEffect(() => {
     fetchStats();
+    const interval = setInterval(fetchStats, 30000); // every 30 seconds
+  return () => clearInterval(interval);
   }, []);
 
   if (isLoading)
@@ -86,13 +88,11 @@ const AdminDashboard = ({ user }) => {
   ];
 
   const attendanceData = [
-    {
-      name: "Present",
-      value: stats.totalEmployees - (stats.pendingLeaves + stats.approvedLeaves + stats.rejectedLeaves),
-    },
-    { name: "Absent", value: 0 },
-    { name: "Leave", value: stats.approvedLeaves + stats.pendingLeaves },
+    { name: "Present", value: stats.attendance.present },
+    { name: "Absent", value: stats.attendance.absent },
+    { name: "Leave", value: stats.attendance.leave },
   ];
+  
 
   return (
     <div className="p-6 space-y-8">
@@ -218,18 +218,7 @@ const AdminDashboard = ({ user }) => {
         </div>
       </div>
 
-      {/* Department Bar Chart */}
-      <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="font-semibold mb-3 text-gray-700">Employees per Department</h3>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={stats.departmentCounts}>
-            <XAxis dataKey="departmentName" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="count" fill="#a16bc7ff" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      
     </div>
   );
 };
@@ -324,118 +313,116 @@ const EmployeeDashboard = ({ user }) => {
   ];
 
   return (
-    <div className="p-6 space-y-8">
-      <h2 className="text-2xl font-bold text-gray-800">
-        Welcome back, {user?.name || "Employee"} 👋
-      </h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <div className="min-h-screen bg-gray-100 px-6 py-8 space-y-10">
+  
+      {/* 🌟 HERO WELCOME */}
+      <div className="bg-gradient-to-r from-teal-600 to-blue-600 rounded-2xl p-8 shadow-lg flex flex-col md:flex-row justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-white">
+            Welcome back, {user?.name || "Employee"} 👋
+          </h2>
+          <p className="text-teal-100 mt-2">
+            Here’s an overview of your activity & status
+          </p>
+        </div>
+      </div>
+  
+      {/* 📊 STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           title="Total Employees"
           value={stats.totalEmployees}
-          icon={<Users size={38} />}
-          colorClass="bg-teal-600"
+          icon={<Users size={40} />}
+          colorClass="bg-gradient-to-br from-teal-500 to-teal-700"
         />
         <StatCard
           title="Departments"
           value={stats.totalDepartments}
-          icon={<Building2 size={38} />}
-          colorClass="bg-blue-600"
+          icon={<Building2 size={40} />}
+          colorClass="bg-gradient-to-br from-blue-500 to-blue-700"
         />
       </div>
-
- 
-
-      
-      {/* ==== MY LEAVE STATUS BOXES ==== */}
-<div className="bg-white rounded-xl shadow p-5">
-<h3 className="text-xl font-bold text-gray-800 mb-4">
-  My Leave Status
-</h3>
-
-
-  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    {/* Pending */}
-    <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-lg">
-      <p className="text-sm text-yellow-700">Pending</p>
-      <p className="text-2xl font-bold text-yellow-800">{pending}</p>
-    </div>
-
-    {/* Approved */}
-    <div className="bg-green-100 border-l-4 border-green-500 p-4 rounded-lg">
-      <p className="text-sm text-green-700">Approved</p>
-      <p className="text-2xl font-bold text-green-800">{approved}</p>
-    </div>
-
-    {/* Rejected */}
-    <div className="bg-red-100 border-l-4 border-red-500 p-4 rounded-lg">
-      <p className="text-sm text-red-700">Rejected</p>
-      <p className="text-2xl font-bold text-red-800">{rejected}</p>
-    </div>
-    
-  </div>
-</div>
-
-      
-
-      {/* Attendance Chart */}
-      <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="font-semibold mb-3 text-gray-700">Attendance</h3>
-        
-
-        
-        <div className="flex gap-6 mt-3 justify-center">
+  
+      {/* 🏖️ MY LEAVE STATUS */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-6">
+          My Leave Status
+        </h3>
+  
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="rounded-xl p-6 bg-gradient-to-br from-yellow-100 to-yellow-200 shadow hover:scale-105 transition">
+            <p className="text-sm text-yellow-700">Pending</p>
+            <p className="text-3xl font-bold text-yellow-800">{pending}</p>
+          </div>
+  
+          <div className="rounded-xl p-6 bg-gradient-to-br from-green-100 to-green-200 shadow hover:scale-105 transition">
+            <p className="text-sm text-green-700">Approved</p>
+            <p className="text-3xl font-bold text-green-800">{approved}</p>
+          </div>
+  
+          <div className="rounded-xl p-6 bg-gradient-to-br from-red-100 to-red-200 shadow hover:scale-105 transition">
+            <p className="text-sm text-red-700">Rejected</p>
+            <p className="text-3xl font-bold text-red-800">{rejected}</p>
+          </div>
+        </div>
+      </div>
+  
+      {/* 📈 ATTENDANCE */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">
+          Attendance Overview
+        </h3>
+  
+        <div className="flex flex-wrap justify-center gap-8 mt-6">
           {attendanceData.map((item, idx) => (
-            <div key={idx} className="flex items-center gap-2">
+            <div
+              key={idx}
+              className="flex items-center gap-3 bg-gray-50 px-5 py-3 rounded-xl shadow"
+            >
               <div
-                className="w-3 h-3 rounded-full"
+                className="w-4 h-4 rounded-full"
                 style={{ background: ATTENDANCE_COLORS[idx] }}
-              ></div>
-              <span className="text-gray-600 text-sm">
-                {item.name} ({item.value})
+              />
+              <span className="text-gray-700 font-medium">
+                {item.name}: {item.value}
               </span>
             </div>
           ))}
         </div>
       </div>
-
-      {/* Recent Rewards */}
-      <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="font-semibold mb-5 text-gray-700 text-lg">Recent Rewards</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stats.rewards.map((reward, index) => (
-            <div
-              key={index}
-              className="relative p-5 rounded-xl shadow-md overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300"
-              style={{
-                background: `linear-gradient(135deg, #f093fb ${index * 20}%, #f5576c 100%)`,
-              }}
-            >
-              <div className="absolute top-3 right-3 bg-white text-red-600 rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                {index + 1}
+  
+      {/* 🏆 RECENT REWARDS */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-6">
+          Recent Rewards
+        </h3>
+  
+        {stats.rewards.length === 0 ? (
+          <p className="text-gray-500 text-center">No rewards yet</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stats.rewards.map((reward, index) => (
+              <div
+                key={index}
+                className="relative p-6 rounded-2xl shadow-lg text-white overflow-hidden hover:scale-105 transition"
+                style={{
+                  background: "linear-gradient(135deg, #667eea, #764ba2)",
+                }}
+              >
+                <span className="absolute top-4 right-4 bg-white text-indigo-600 rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                  {index + 1}
+                </span>
+                <p className="text-lg font-semibold">{reward.employeeName}</p>
+                <p className="text-indigo-200 mt-1">{reward.rewardName}</p>
               </div>
-              <p className="text-white font-semibold text-lg">{reward.employeeName}</p>
-              <p className="text-red-200 text-sm mt-1">{reward.rewardName}</p>
-              <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity rounded-xl"></div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* Department Bar Chart */}
-      <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="font-semibold mb-3 text-gray-700">Employees per Department</h3>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={stats.departmentCounts}>
-            <XAxis dataKey="departmentName" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="count" fill="#FF8042" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+  
     </div>
   );
+  
 };
 
 /* --------------------------- MAIN PAGE --------------------------- */

@@ -48,6 +48,7 @@ export default function App() {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('userName', data.user.name);
       localStorage.setItem('userRole', data.user.role);
+    
       setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
       setView('dashboard');
       alert(data.message);

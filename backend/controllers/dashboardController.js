@@ -2,6 +2,7 @@ import { User } from "../models/userSchema.js";
 import { Leave } from "../models/leaveSchema.js";
 import { Department } from "../models/DepartmentSchema.js";
 import { Reward } from "../models/rewardModel.js";
+import { Attendance } from "../models/attendanceSchema.js";
 
 export const getDashboard = async (req, res) => {
   try {
@@ -14,6 +15,12 @@ export const getDashboard = async (req, res) => {
 
     const rewards = await Reward.find().sort({ createdAt: -1 }).limit(5);
 
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const presentCount = await Attendance.countDocuments({ date: today, status: "Present" });
+    const absentCount = await Attendance.countDocuments({ date: today, status: "Absent" });
+
+    
+    
     res.json({
       totalEmployees,
       totalDepartments,
@@ -21,6 +28,11 @@ export const getDashboard = async (req, res) => {
       approvedLeaves,
       rejectedLeaves,
       rewards,
+      attendance: {
+        present: presentCount,
+        absent: absentCount,
+        leave: approvedLeaves + pendingLeaves, // optional
+      },
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

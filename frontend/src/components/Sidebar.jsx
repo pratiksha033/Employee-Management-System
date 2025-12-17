@@ -24,7 +24,6 @@ export default function Sidebar({ activePage, setActivePage, onLogout, user }) {
     ...(role === "admin"
       ? [
           { key: "employee", label: "Employee", icon: <Users size={20} /> },
-          { key: "attendance", label: "Attendance", icon: <CalendarCheck size={20} /> },
           { key: "recruitment", label: "Recruitment", icon: <Briefcase size={20} /> },
          
         ]
