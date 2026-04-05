@@ -19,9 +19,13 @@ export const downloadPayslip = catchAsyncError(async (req, res, next) => {
 	}
 
 	// Authorization: employee can only download their own payslip
-	if (req.user.role === "employee" && empData.user.toString() !== req.user._id.toString()) {
-		return next(new ErrorHandler("Access denied", 403));
-	}
+if (req.user.role === "employee") {
+    // Compare employee email with logged-in user's email
+    if (empData.email !== req.user.email) {
+        return next(new ErrorHandler("Access denied", 403));
+    }
+}
+
 
 	// ------------ PDF GENERATION ------------
 	const doc = new PDFDocument({ size: "A4", margin: 50 });

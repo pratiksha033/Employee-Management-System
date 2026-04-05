@@ -47,14 +47,21 @@ export const getAllPayrolls = catchAsyncError(async (req, res, next) => {
 // Employee: Get My Payrolls
 // =============================
 export const getMyPayrolls = catchAsyncError(async (req, res, next) => {
-  // Find employee record linked to logged-in user
-  const employee = await Employee.findOne({ user: req.user.id });
+  // Step 1: Get logged-in user
+  const user = await User.findById(req.user.id);
+
+  if (!user) {
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+  // Step 2: Find employee using email
+  const employee = await Employee.findOne({ email: user.email });
 
   if (!employee) {
     return next(new ErrorHandler("Employee profile not found", 404));
   }
 
-  // Fetch payrolls using Employee ID
+  // Step 3: Fetch payrolls for this employee
   const payrolls = await Payroll.find({
     employee: employee._id,
   }).sort({ generatedAt: -1 });

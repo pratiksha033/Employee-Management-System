@@ -64,15 +64,25 @@ export const addSalary = catchAsyncError(async (req, res, next) => {
 // =============================
 //  Employee: Get My Salary Records (FIXED)
 // =============================
+// =============================
+//  Employee: Get My Salary Records (WORKING)
+// =============================
 export const getMySalary = catchAsyncError(async (req, res, next) => {
-  // Step 1: Find employee linked to logged-in user
-  const employee = await Employee.findOne({ user: req.user.id });
+  // Step 1: Get logged-in user
+  const user = await User.findById(req.user.id);
+
+  if (!user) {
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+  // Step 2: Find employee using user email
+  const employee = await Employee.findOne({ email: user.email });
 
   if (!employee) {
     return next(new ErrorHandler("Employee profile not found", 404));
   }
 
-  // Step 2: Find salaries for that employee
+  // Step 3: Fetch salary records
   const salaries = await Salary.find({ employeeId: employee._id })
     .populate("employeeId", "name email")
     .populate("departmentId", "name")

@@ -356,7 +356,7 @@ const EmployeeDashboard = ({ user }) => {
 
   return (
     <div className="p-6 space-y-8">
-      <h2 className="text-2xl font-bold text-gray-800">
+      <h2 className="text-2xl font-bold text-white-800">
         Welcome back, {user?.name || "Employee"} 👋
       </h2>
 
