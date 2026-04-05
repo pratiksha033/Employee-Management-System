@@ -1,0 +1,33 @@
+# ─── Environment Variables ───
+.env
+.env.local
+.env.development
+.env.production
+*.env
+
+# ─── Node Modules ───
+node_modules/
+**/node_modules/
+
+# ─── Build Outputs ───
+dist/
+build/
+.next/
+
+# ─── Logs ───
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# ─── OS Files ───
+.DS_Store
+Thumbs.db
+
+# ─── Editor Configs ───
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
