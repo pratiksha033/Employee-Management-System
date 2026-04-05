@@ -19,8 +19,7 @@ export const getDashboard = async (req, res) => {
     const presentCount = await Attendance.countDocuments({ date: today, status: "Present" });
     const absentCount = await Attendance.countDocuments({ date: today, status: "Absent" });
 
-    
-    
+
     res.json({
       totalEmployees,
       totalDepartments,
@@ -28,7 +27,7 @@ export const getDashboard = async (req, res) => {
       approvedLeaves,
       rejectedLeaves,
       rewards,
-      attendance: {
+       attendance: {
         present: presentCount,
         absent: absentCount,
         leave: approvedLeaves + pendingLeaves, // optional

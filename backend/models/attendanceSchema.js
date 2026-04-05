@@ -7,7 +7,13 @@ const attendanceSchema = new mongoose.Schema({
     required: true,
   },
   date: { type: String, required: true }, // "YYYY-MM-DD"
-  status: { type: String, enum: ["Present", "Absent"], required: true },
+  status: {
+    type: String,
+    enum: ["Present", "Absent", "Late"],
+    default: "Absent",
+  },
+  checkInTime: { type: Date, default: null },
+  checkOutTime: { type: Date, default: null },
 });
 
 export const Attendance = mongoose.model("Attendance", attendanceSchema);

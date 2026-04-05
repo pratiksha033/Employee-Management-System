@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Users, Building2, Clock } from "lucide-react";
+import { Users, Building2, Clock, LogIn, LogOut, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -32,6 +32,7 @@ const StatCard = ({ title, value, icon, colorClass }) => (
 /* --------------------------- ADMIN DASHBOARD --------------------------- */
 const AdminDashboard = ({ user }) => {
   const [stats, setStats] = useState(null);
+  const [allLeaves, setAllLeaves] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -60,10 +61,28 @@ const AdminDashboard = ({ user }) => {
     }
   };
 
+  const fetchAllLeaves = async () => {
+    try {
+      const { data } = await axios.get(
+        "http://localhost:4000/api/v1/leave/all",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
+      );
+      setAllLeaves(data.leaves || []);
+    } catch (err) {
+      console.error("Error fetching all leaves:", err.message);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
+    fetchAllLeaves();
     const interval = setInterval(fetchStats, 30000); // every 30 seconds
-  return () => clearInterval(interval);
+    return () => clearInterval(interval);
+
   }, []);
 
   if (isLoading)
@@ -81,18 +100,30 @@ const AdminDashboard = ({ user }) => {
       </div>
     );
 
+  // Prepare Leave Status Chart
   const leaveData = [
     { name: "Pending", value: stats.pendingLeaves },
     { name: "Approved", value: stats.approvedLeaves },
     { name: "Rejected", value: stats.rejectedLeaves },
   ];
 
+  // Prepare Attendance Chart
   const attendanceData = [
     { name: "Present", value: stats.attendance.present },
     { name: "Absent", value: stats.attendance.absent },
     { name: "Leave", value: stats.attendance.leave },
   ];
-  
+
+  // Prepare Leaves Per Month
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const leavesPerMonth = months.map(m => ({ month: m, leaves: 0 }));
+
+  allLeaves.forEach(leave => {
+    const date = new Date(leave.startDate);
+    const monthIndex = date.getMonth();
+    leavesPerMonth[monthIndex].leaves += 1;
+  });
+
 
   return (
     <div className="p-6 space-y-8">
@@ -141,7 +172,7 @@ const AdminDashboard = ({ user }) => {
               Total Leaves: {stats.pendingLeaves + stats.approvedLeaves + stats.rejectedLeaves}
             </p>
           </div>
-          <div className="flex gap-6 mt-3">
+          <div className="flex gap-2 mt-3">
             {leaveData.map((item, idx) => (
               <div key={idx} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ background: COLORS[idx] }}></div>
@@ -195,22 +226,17 @@ const AdminDashboard = ({ user }) => {
         {/* Recent Rewards Section */}
         <div className="col-span-2 bg-white rounded-xl shadow p-5">
           <h3 className="font-semibold mb-5 text-gray-700 text-lg">Recent Rewards</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-4">
             {stats.rewards.map((reward, index) => (
               <div
                 key={index}
-                className="relative p-5 rounded-xl shadow-md overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300"
+                className="relative w-full p-5 rounded-xl shadow-md overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 flex justify-between items-center"
                 style={{
                   background: `linear-gradient(135deg, #6e8efb ${index * 20}%, #a777e3 100%)`,
                 }}
               >
-                {/* Badge */}
-                <div className="absolute top-3 right-3 bg-white text-purple-700 rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                  {index + 1}
-                </div>
                 <p className="text-white font-semibold text-lg">{reward.employeeName}</p>
-                <p className="text-purple-200 text-sm mt-1">{reward.rewardName}</p>
-                {/* Hover overlay */}
+                <p className="text-purple-200 text-sm">{reward.rewardType}</p>
                 <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity rounded-xl"></div>
               </div>
             ))}
@@ -218,7 +244,18 @@ const AdminDashboard = ({ user }) => {
         </div>
       </div>
 
-      
+      {/* Leaves Per Month Chart */}
+      <div className="bg-white rounded-xl shadow p-5">
+        <h3 className="font-semibold mb-3 text-gray-700">Leaves Per Month</h3>
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={leavesPerMonth}>
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="leaves" fill="#4cb0c9ff" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };
@@ -229,15 +266,84 @@ const EmployeeDashboard = ({ user }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [myLeaves, setMyLeaves] = useState([]);
+  const [myTasks, setMyTasks] = useState([]);
 
+  // ✅ Attendance states
+  const [todayStatus, setTodayStatus] = useState(null); // null | { status, checkInTime, checkOutTime }
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Live clock
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Fetch today's status
+  const fetchTodayStatus = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:4000/api/v1/attendance/today-status", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+      });
+      setTodayStatus(data);
+    } catch (err) {
+      console.error("Error fetching today status:", err.message);
+    }
+  };
+
+  // Check In handler
+  const handleCheckIn = async () => {
+    setAttendanceLoading(true);
+    try {
+      await axios.post("http://localhost:4000/api/v1/attendance/checkin", {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+      });
+      await fetchTodayStatus();
+    } catch (err) {
+      alert(err.response?.data?.message || "Check-in failed");
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
+  // Check Out handler
+  const handleCheckOut = async () => {
+    setAttendanceLoading(true);
+    try {
+      await axios.post("http://localhost:4000/api/v1/attendance/checkout", {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+      });
+      await fetchTodayStatus();
+    } catch (err) {
+      alert(err.response?.data?.message || "Check-out failed");
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+  const fethchMyTasks = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:4000/api/v1/tasks/my", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+      }
+      );
+      console.log("My Tasks Data:", data);
+      setMyTasks(data.tasks || []);
+    }
+    catch (err) {
+      console.error("Error fetching my tasks:", err.message);
+    }
+  };
+
+  useEffect(() => {
+    fethchMyTasks();
+    fetchTodayStatus();
+  }, []);
   const fetchStats = async () => {
     try {
       const { data } = await axios.get(
         "http://localhost:4000/api/v1/dashboard/stats",
         {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
         }
       );
 
@@ -254,23 +360,20 @@ const EmployeeDashboard = ({ user }) => {
       setIsLoading(false);
     }
   };
+
   const fetchMyLeaves = async () => {
     try {
       const { data } = await axios.get(
         "http://localhost:4000/api/v1/leave/my-leaves",
         {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
         }
       );
-  
       setMyLeaves(data.leaves || []);
     } catch (err) {
       console.error("Error fetching my leaves:", err.message);
     }
   };
-  
 
   useEffect(() => {
     fetchStats();
@@ -300,130 +403,269 @@ const EmployeeDashboard = ({ user }) => {
     { name: "Absent", value: 0 },
     { name: "Leave", value: stats.approvedLeaves + stats.pendingLeaves },
   ];
-  const pending = myLeaves.filter(
-    (l) => (l.status || "Pending") === "Pending"
-  ).length;
-  const approved = myLeaves.filter((l) => l.status === "Approved").length;
-  const rejected = myLeaves.filter((l) => l.status === "Rejected").length;
 
-  const myLeaveChart = [
-    { name: "Pending", value: pending },
-    { name: "Approved", value: approved },
-    { name: "Rejected", value: rejected },
-  ];
+  const pending = myLeaves.filter(l => (l.status || "Pending") === "Pending").length;
+  const approved = myLeaves.filter(l => l.status === "Approved").length;
+  const rejected = myLeaves.filter(l => l.status === "Rejected").length;
+
+  // Format time as HH:MM:SS IST
+  const formatTime = (date) => {
+    return date.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: true });
+  };
+
+  const formatDateTime = (isoStr) => {
+    if (!isoStr) return "--";
+    return new Date(isoStr).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: true });
+  };
+
+  const getStatusColor = (status) => {
+    if (status === "Present") return { bg: "#d1fae5", text: "#065f46", border: "#10b981" };
+    if (status === "Late") return { bg: "#fef3c7", text: "#92400e", border: "#f59e0b" };
+    if (status === "Absent") return { bg: "#fee2e2", text: "#991b1b", border: "#ef4444" };
+    return { bg: "#f3f4f6", text: "#374151", border: "#9ca3af" };
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 px-6 py-8 space-y-10">
-  
-      {/* 🌟 HERO WELCOME */}
-      <div className="bg-gradient-to-r from-teal-600 to-blue-600 rounded-2xl p-8 shadow-lg flex flex-col md:flex-row justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-white">
-            Welcome back, {user?.name || "Employee"} 👋
-          </h2>
-          <p className="text-teal-100 mt-2">
-            Here’s an overview of your activity & status
-          </p>
+    <div className="p-6 space-y-8">
+      <h2 className="text-2xl font-bold text-white">
+        Welcome back, {user?.name || "Employee"} 👋
+      </h2>
+
+      {/* ✅ CHECK-IN / CHECK-OUT CARD */}
+      <div style={{
+        background: "linear-gradient(135deg, #1e3a5f 0%, #0f2544 100%)",
+        borderRadius: "16px",
+        padding: "24px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+        border: "1px solid rgba(255,255,255,0.1)"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+          {/* Left: Clock */}
+          <div>
+            <p style={{ color: "#94a3b8", fontSize: "13px", marginBottom: "4px" }}>⏰ Current Time (IST)</p>
+            <p style={{ color: "#ffffff", fontSize: "32px", fontWeight: "700", fontFamily: "monospace", letterSpacing: "2px" }}>
+              {formatTime(currentTime)}
+            </p>
+            <p style={{ color: "#64748b", fontSize: "13px", marginTop: "4px" }}>
+              {currentTime.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            </p>
+          </div>
+
+          {/* Right: Status + Buttons */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px" }}>
+            {/* Status Badge */}
+            {todayStatus && todayStatus.status !== "Not Marked" ? (
+              <div style={{
+                padding: "6px 16px",
+                borderRadius: "999px",
+                background: getStatusColor(todayStatus.status).bg,
+                color: getStatusColor(todayStatus.status).text,
+                fontWeight: "700",
+                fontSize: "14px",
+                border: `2px solid ${getStatusColor(todayStatus.status).border}`
+              }}>
+                {todayStatus.status === "Present" && <span>✅ Present</span>}
+                {todayStatus.status === "Late" && <span>⚠️ Late</span>}
+                {todayStatus.status === "Absent" && <span>❌ Absent</span>}
+              </div>
+            ) : (
+              <div style={{ padding: "6px 16px", borderRadius: "999px", background: "rgba(255,255,255,0.1)", color: "#94a3b8", fontSize: "14px" }}>
+                🕐 Not checked in yet
+              </div>
+            )}
+
+            {/* Check In / Check Out Buttons */}
+            <div style={{ display: "flex", gap: "10px" }}>
+              {!todayStatus?.checkInTime ? (
+                <button
+                  onClick={handleCheckIn}
+                  disabled={attendanceLoading}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "8px",
+                    padding: "10px 24px", borderRadius: "10px",
+                    background: attendanceLoading ? "#374151" : "linear-gradient(135deg, #10b981, #059669)",
+                    color: "white", fontWeight: "700", fontSize: "15px",
+                    border: "none", cursor: attendanceLoading ? "not-allowed" : "pointer",
+                    boxShadow: "0 4px 15px rgba(16,185,129,0.4)",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <LogIn size={18} />
+                  {attendanceLoading ? "Checking In..." : "Check In"}
+                </button>
+              ) : !todayStatus?.checkOutTime ? (
+                <button
+                  onClick={handleCheckOut}
+                  disabled={attendanceLoading}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "8px",
+                    padding: "10px 24px", borderRadius: "10px",
+                    background: attendanceLoading ? "#374151" : "linear-gradient(135deg, #ef4444, #dc2626)",
+                    color: "white", fontWeight: "700", fontSize: "15px",
+                    border: "none", cursor: attendanceLoading ? "not-allowed" : "pointer",
+                    boxShadow: "0 4px 15px rgba(239,68,68,0.4)",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <LogOut size={18} />
+                  {attendanceLoading ? "Checking Out..." : "Check Out"}
+                </button>
+              ) : (
+                <div style={{ color: "#10b981", fontWeight: "600", fontSize: "14px" }}>✅ Day Complete</div>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* Check-in / Check-out time display */}
+        {todayStatus?.checkInTime && (
+          <div style={{
+            marginTop: "16px", paddingTop: "16px",
+            borderTop: "1px solid rgba(255,255,255,0.1)",
+            display: "flex", gap: "32px", flexWrap: "wrap"
+          }}>
+            <div>
+              <p style={{ color: "#64748b", fontSize: "12px" }}>CHECK IN</p>
+              <p style={{ color: "#10b981", fontSize: "16px", fontWeight: "700" }}>{formatDateTime(todayStatus.checkInTime)}</p>
+            </div>
+            {todayStatus?.checkOutTime && (
+              <div>
+                <p style={{ color: "#64748b", fontSize: "12px" }}>CHECK OUT</p>
+                <p style={{ color: "#ef4444", fontSize: "16px", fontWeight: "700" }}>{formatDateTime(todayStatus.checkOutTime)}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-  
-      {/* 📊 STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard
-          title="Total Employees"
-          value={stats.totalEmployees}
-          icon={<Users size={40} />}
-          colorClass="bg-gradient-to-br from-teal-500 to-teal-700"
-        />
-        <StatCard
-          title="Departments"
-          value={stats.totalDepartments}
-          icon={<Building2 size={40} />}
-          colorClass="bg-gradient-to-br from-blue-500 to-blue-700"
-        />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <StatCard title="Total Employees" value={stats.totalEmployees} icon={<Users size={38} />} colorClass="bg-teal-600" />
+        <StatCard title="Departments" value={stats.totalDepartments} icon={<Building2 size={38} />} colorClass="bg-blue-600" />
       </div>
-  
-      {/* 🏖️ MY LEAVE STATUS */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-6">
-          My Leave Status
-        </h3>
-  
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="rounded-xl p-6 bg-gradient-to-br from-yellow-100 to-yellow-200 shadow hover:scale-105 transition">
+
+      {/* ==== MY LEAVE STATUS BOXES ==== */}
+      <div className="bg-white rounded-xl shadow p-5">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">My Leave Status</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-lg">
             <p className="text-sm text-yellow-700">Pending</p>
-            <p className="text-3xl font-bold text-yellow-800">{pending}</p>
+            <p className="text-2xl font-bold text-yellow-800">{pending}</p>
           </div>
-  
-          <div className="rounded-xl p-6 bg-gradient-to-br from-green-100 to-green-200 shadow hover:scale-105 transition">
+          <div className="bg-green-100 border-l-4 border-green-500 p-4 rounded-lg">
             <p className="text-sm text-green-700">Approved</p>
-            <p className="text-3xl font-bold text-green-800">{approved}</p>
+            <p className="text-2xl font-bold text-green-800">{approved}</p>
           </div>
-  
-          <div className="rounded-xl p-6 bg-gradient-to-br from-red-100 to-red-200 shadow hover:scale-105 transition">
+          <div className="bg-red-100 border-l-4 border-red-500 p-4 rounded-lg">
             <p className="text-sm text-red-700">Rejected</p>
-            <p className="text-3xl font-bold text-red-800">{rejected}</p>
+            <p className="text-2xl font-bold text-red-800">{rejected}</p>
           </div>
         </div>
       </div>
-  
-      {/* 📈 ATTENDANCE */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">
-          Attendance Overview
-        </h3>
-  
-        <div className="flex flex-wrap justify-center gap-8 mt-6">
-          {attendanceData.map((item, idx) => (
+
+      {/* ==== Attendance + Task Management Row ==== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Attendance Chart */}
+        <div className="bg-white rounded-xl shadow p-5">
+          <h3 className="font-semibold mb-3 text-gray-700">Attendance</h3>
+          <ResponsiveContainer width="100%" height={260}>
+            <PieChart>
+              <Pie
+                data={attendanceData}
+                dataKey="value"
+                cx="50%"
+                cy="50%"
+                innerRadius={70}
+                outerRadius={110}
+                paddingAngle={5}
+                startAngle={90}
+                endAngle={450}
+                cornerRadius={8}
+              >
+                {attendanceData.map((entry, index) => (
+                  <Cell key={index} fill={ATTENDANCE_COLORS[index]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="flex gap-6 mt-3 justify-center">
+            {attendanceData.map((item, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ background: ATTENDANCE_COLORS[idx] }}
+                ></div>
+                <span className="text-gray-600 text-sm">
+                  {item.name} ({item.value})
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Task Management Panel */}
+        <div className="bg-white rounded-xl shadow p-5">
+          <h3 className="font-semibold mb-3 text-gray-700">My Tasks</h3>
+          {myTasks.length === 0 ? (
+            <p className="text-gray-500 text-sm">No tasks assigned yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {myTasks.map((task, idx) => (
+                <div
+                  key={idx}
+                  className={`p-4 rounded-lg shadow flex justify-between items-center
+                    ${task.status === "Pending"
+                      ? "bg-yellow-100 border-l-4 border-yellow-500"
+                      : task.status === "In Progress"
+                        ? "bg-blue-100 border-l-4 border-blue-500"
+                        : "bg-green-100 border-l-4 border-green-500"
+                    }`}
+                >
+                  <div>
+                    <p className="font-medium text-gray-700">{task.title}</p>
+                    <p className="text-sm text-gray-500">{task.description}</p>
+                  </div>
+                  <span
+                    className={`text-sm font-semibold px-2 py-1 rounded-full 
+                      ${task.status === "Pending"
+                        ? "bg-yellow-200 text-yellow-800"
+                        : task.status === "In Progress"
+                          ? "bg-blue-200 text-blue-800"
+                          : "bg-green-200 text-green-800"
+                      }`}
+                  >
+                    {task.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Rewards Section */}
+      <div className="col-span-2 bg-white rounded-xl shadow p-5">
+        <h3 className="font-semibold mb-5 text-gray-700 text-lg">Recent Rewards</h3>
+        <div className="space-y-4">
+          {stats.rewards.map((reward, index) => (
             <div
-              key={idx}
-              className="flex items-center gap-3 bg-gray-50 px-5 py-3 rounded-xl shadow"
+              key={index}
+              className="relative w-full p-5 rounded-xl shadow-md overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 flex justify-between items-center"
+              style={{
+                background: `linear-gradient(135deg, #6e8efb ${index * 20}%, #a777e3 100%)`,
+              }}
             >
-              <div
-                className="w-4 h-4 rounded-full"
-                style={{ background: ATTENDANCE_COLORS[idx] }}
-              />
-              <span className="text-gray-700 font-medium">
-                {item.name}: {item.value}
-              </span>
+              <p className="text-white font-semibold text-lg">{reward.employeeName}</p>
+              <p className="text-purple-200 text-sm">{reward.rewardType}</p>
+              <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity rounded-xl"></div>
             </div>
           ))}
         </div>
       </div>
-  
-      {/* 🏆 RECENT REWARDS */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-6">
-          Recent Rewards
-        </h3>
-  
-        {stats.rewards.length === 0 ? (
-          <p className="text-gray-500 text-center">No rewards yet</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {stats.rewards.map((reward, index) => (
-              <div
-                key={index}
-                className="relative p-6 rounded-2xl shadow-lg text-white overflow-hidden hover:scale-105 transition"
-                style={{
-                  background: "linear-gradient(135deg, #667eea, #764ba2)",
-                }}
-              >
-                <span className="absolute top-4 right-4 bg-white text-indigo-600 rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                  {index + 1}
-                </span>
-                <p className="text-lg font-semibold">{reward.employeeName}</p>
-                <p className="text-indigo-200 mt-1">{reward.rewardName}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-  
     </div>
   );
-  
 };
+
 
 /* --------------------------- MAIN PAGE --------------------------- */
 export default function DashboardPage({ user }) {

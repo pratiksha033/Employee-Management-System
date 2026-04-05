@@ -43,7 +43,21 @@ export default function AttendancePage({ user }) {
           }
         );
         const data = await res.json();
-        setAttendance(data.success ? data.attendance : {});
+        if (data.success) {
+          // Convert records array → map: { employeeId: { status, checkInTime, checkOutTime } }
+          const map = {};
+          (data.records || []).forEach((r) => {
+            const id = r.employeeId?._id || r.employeeId;
+            map[id] = {
+              status: r.status,
+              checkInTime: r.checkInTime,
+              checkOutTime: r.checkOutTime,
+            };
+          });
+          setAttendance(map);
+        } else {
+          setAttendance({});
+        }
       } catch (err) {
         console.error("Error fetching attendance:", err);
       }
@@ -52,42 +66,18 @@ export default function AttendancePage({ user }) {
     fetchAttendance();
   }, [selectedDate, token]);
 
-  /* ================= ADMIN: MARK ATTENDANCE ================= */
-  const markAttendance = async (employeeId, status) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/attendance/mark`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          employeeId,
-          date: selectedDate,
-          status,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setAttendance((prev) => ({
-          ...prev,
-          [employeeId]: status,
-        }));
-      } else {
-        alert(data.message);
-      }
-    } catch (err) {
-      console.error("Error marking attendance:", err);
-    }
+  const fmt = (isoStr) => {
+    if (!isoStr) return "--";
+    return new Date(isoStr).toLocaleTimeString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour12: true,
+    });
   };
 
   /* ================= EMPLOYEE VIEW ================= */
   if (user?.role === "employee") {
-    console.log("USER:", user);
-console.log("employeeId:", user._id);
-console.log("attendance:", attendance);
-    const myStatus = attendance[user._id] || "Not Marked";
+    const myRecord = attendance[user._id] || {};
+    const myStatus = myRecord.status || "Not Marked";
 
     return (
       <div className="p-6 bg-gray-900 min-h-screen text-gray-100 rounded-xl">
@@ -120,13 +110,12 @@ console.log("attendance:", attendance);
           <p className="text-lg">
             <span className="font-semibold">Status:</span>{" "}
             <span
-              className={`px-3 py-1 rounded-lg ml-2 ${
-                myStatus === "Present"
-                  ? "bg-green-600"
-                  : myStatus === "Absent"
+              className={`px-3 py-1 rounded-lg ml-2 ${myStatus === "Present"
+                ? "bg-green-600"
+                : myStatus === "Absent"
                   ? "bg-red-600"
                   : "bg-gray-600"
-              }`}
+                }`}
             >
               {myStatus}
             </span>
@@ -142,7 +131,7 @@ console.log("attendance:", attendance);
       <h1 className="text-3xl font-bold mb-6 text-teal-400">
         Attendance Management
       </h1>
-      
+
 
       <div className="mb-6 flex items-center gap-4">
         <label className="font-semibold text-gray-300 text-lg">
@@ -160,53 +149,50 @@ console.log("attendance:", attendance);
         <table className="w-full border-collapse">
           <thead className="bg-gray-800 text-gray-300">
             <tr>
-              <th className="border border-gray-700 p-3">Employee ID</th>
               <th className="border border-gray-700 p-3">Name</th>
               <th className="border border-gray-700 p-3">Department</th>
+              <th className="border border-gray-700 p-3">Check In</th>
+              <th className="border border-gray-700 p-3">Check Out</th>
               <th className="border border-gray-700 p-3">Status</th>
-              <th className="border border-gray-700 p-3">Action</th>
             </tr>
           </thead>
 
           <tbody>
-            {employees.map((emp) => (
-              <tr key={emp._id} className="hover:bg-gray-800">
-                <td className="border border-gray-800 p-3">{emp._id}</td>
-                <td className="border border-gray-800 p-3">{emp.name}</td>
-                <td className="border border-gray-800 p-3">
-                  {emp.department?.name || "N/A"}
-                </td>
+            {employees.map((emp) => {
+              const userId = emp.user?._id || emp.user;
+              const rec = attendance[userId] || {};
+              return (
+                <tr key={emp._id} className="hover:bg-gray-800">
+                  <td className="border border-gray-800 p-3">{emp.name}</td>
+                  <td className="border border-gray-800 p-3">
+                    {emp.department?.name || "N/A"}
+                  </td>
 
-                <td className="border border-gray-800 p-3 text-center">
-                  <span
-                    className={`px-3 py-1 rounded-lg ${
-                      attendance[emp._id] === "Present"
+                  <td className="border border-gray-800 p-3 text-center text-green-400">
+                    {fmt(rec.checkInTime)}
+                  </td>
+
+                  <td className="border border-gray-800 p-3 text-center text-red-400">
+                    {fmt(rec.checkOutTime)}
+                  </td>
+
+                  <td className="border border-gray-800 p-3 text-center">
+                    <span
+                      className={`px-3 py-1 rounded-lg font-semibold ${rec.status === "Present"
                         ? "bg-green-600"
-                        : attendance[emp._id] === "Absent"
-                        ? "bg-red-600"
-                        : "bg-gray-700"
-                    }`}
-                  >
-                    {attendance[emp._id] || "Not Marked"}
-                  </span>
-                </td>
-
-                <td className="border border-gray-800 p-3 text-center">
-                  <button
-                    onClick={() => markAttendance(emp._id, "Present")}
-                    className="bg-green-500 px-3 py-1 rounded-lg mr-2"
-                  >
-                    Present
-                  </button>
-                  <button
-                    onClick={() => markAttendance(emp._id, "Absent")}
-                    className="bg-red-500 px-3 py-1 rounded-lg"
-                  >
-                    Absent
-                  </button>
-                </td>
-              </tr>
-            ))}
+                        : rec.status === "Late"
+                          ? "bg-yellow-600"
+                          : rec.status === "Absent"
+                            ? "bg-red-600"
+                            : "bg-gray-700"
+                        }`}
+                    >
+                      {rec.status || "Not Marked"}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

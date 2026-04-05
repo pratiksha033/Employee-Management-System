@@ -17,6 +17,7 @@ import recruitmentRoutes from "./routes/recruitmentRoutes.js";
 import payrollRoutes from "./routes/payrollRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import rewardRoutes from "./routes/rewardRoutes.js";
+import { startAttendanceCron } from "./attendanceCron.js";
 
 dotenv.config({ path: "./.env" });
 
@@ -58,6 +59,7 @@ const startServer = async () => {
     const port = process.env.PORT || 4000;
     app.listen(port, () => {
       console.log(`🚀 Server running at http://localhost:${port}`);
+      startAttendanceCron();
     });
   } catch (err) {
     console.error("❌ Failed to start server");
