@@ -24,7 +24,7 @@ const formatCurrency = (amount) => {
 };
 
 // ------------------ ADMIN VIEW ------------------
-const AdminSalaryView = () => {
+const AdminSalaryView = ({ darkMode }) => {
   const [departments, setDepartments] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
@@ -136,7 +136,7 @@ const AdminSalaryView = () => {
 
         <form onSubmit={handleAddSalary} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
+
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
@@ -217,7 +217,7 @@ const AdminSalaryView = () => {
           progressPending={isLoading}
           pagination
           highlightOnHover
-          theme="dark"
+          theme={darkMode ? "dark" : "light"}
         />
       </div>
     </div>
@@ -225,7 +225,7 @@ const AdminSalaryView = () => {
 };
 
 // ---------------- EMPLOYEE VIEW ----------------
-const EmployeeSalaryView = () => {
+const EmployeeSalaryView = ({ darkMode }) => {
   const [salaries, setSalaries] = useState([]);
 
   useEffect(() => {
@@ -257,13 +257,13 @@ const EmployeeSalaryView = () => {
     <div className="min-h-screen bg-[#0d1117] p-6 text-white">
       <div className="max-w-4xl mx-auto bg-[#161b22] p-6 rounded-xl border border-gray-700">
         <h2 className="text-3xl font-semibold text-teal-400 mb-4">My Salary History</h2>
-        <DataTable columns={columns} data={salaries} pagination highlightOnHover />
+        <DataTable columns={columns} data={salaries} pagination highlightOnHover theme={darkMode ? "dark" : "light"} />
       </div>
     </div>
   );
 };
 
-export default function SalaryPage({ user }) {
+export default function SalaryPage({ user, darkMode }) {
   if (!user) return <p>Loading...</p>;
-  return user.role === "admin" ? <AdminSalaryView /> : <EmployeeSalaryView />;
+  return user.role === "admin" ? <AdminSalaryView darkMode={darkMode} /> : <EmployeeSalaryView darkMode={darkMode} />;
 }

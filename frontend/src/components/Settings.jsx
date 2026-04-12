@@ -155,10 +155,10 @@ export default function SettingsPage({ user }) {
   );
 
   const inputCls =
-    "w-full p-3 bg-gray-800/60 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors text-sm";
+    "w-full p-3 bg-white dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors text-sm";
 
   const disabledCls =
-    "w-full p-3 bg-gray-800/30 border border-gray-700/50 rounded-xl text-gray-500 text-sm cursor-not-allowed";
+    "w-full p-3 bg-gray-100 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700/50 rounded-xl text-gray-500 text-sm cursor-not-allowed";
 
   /* ─────────────── ACCOUNT INFO ─────────────── */
   const roleColor =
@@ -176,9 +176,8 @@ export default function SettingsPage({ user }) {
 
   /* ─────────────── RENDER ─────────────── */
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 p-6">
-      {/* ── Page Header ── */}
-      <div className="mb-10">
+    <div className="max-w-5xl mx-auto space-y-6 pb-10">
+      <div className="mb-8 mt-4">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
           Settings
         </h1>
@@ -235,7 +234,7 @@ export default function SettingsPage({ user }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* ── Profile Info Card ── */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
               <div className="w-8 h-8 bg-teal-500/10 rounded-lg flex items-center justify-center">
                 <User size={16} className="text-teal-400" />
@@ -303,13 +302,13 @@ export default function SettingsPage({ user }) {
           </div>
 
           {/* ── Account Info Card (read-only) ── */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
               <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center">
                 <Fingerprint size={16} className="text-purple-400" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-white">Account Information</h3>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Account Information</h3>
                 <p className="text-gray-500 text-xs">Your account details at a glance</p>
               </div>
             </div>
@@ -343,13 +342,13 @@ export default function SettingsPage({ user }) {
               ].map(({ icon: Icon, label, value, color }) => (
                 <div
                   key={label}
-                  className="flex items-center justify-between p-3 bg-gray-800/40 rounded-xl border border-gray-700/50"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700/50"
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon size={15} className={color} />
                     <span className="text-xs text-gray-400 font-medium">{label}</span>
                   </div>
-                  <span className="text-sm text-gray-200 font-medium truncate max-w-[160px] text-right">
+                  <span className="text-sm text-gray-800 dark:text-gray-200 font-medium truncate max-w-[160px] text-right">
                     {value}
                   </span>
                 </div>
@@ -357,7 +356,7 @@ export default function SettingsPage({ user }) {
             </div>
 
             {/* Account ID */}
-            <div className="mt-4 p-3 bg-gray-800/40 rounded-xl border border-gray-700/50">
+            <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700/50">
               <p className="text-xs text-gray-500 mb-1">Account ID</p>
               <p className="text-xs text-gray-400 font-mono truncate">
                 {user?._id || user?.id || "—"}
@@ -477,10 +476,10 @@ export default function SettingsPage({ user }) {
             ].map(({ key, label, desc }) => (
               <div
                 key={key}
-                className="flex items-center justify-between p-4 bg-gray-800/40 rounded-xl border border-gray-700/50 hover:border-gray-600 transition-colors"
+                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700/50 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-200">{label}</p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
                 </div>
                 <button
@@ -500,7 +499,7 @@ export default function SettingsPage({ user }) {
 
         {/* ══════════ QUICK LINKS ══════════ */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-          <h3 className="text-base font-semibold text-white mb-4">Quick Links</h3>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Quick Links</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { label: "Privacy Policy", desc: "How we handle your data" },
@@ -510,10 +509,10 @@ export default function SettingsPage({ user }) {
             ].map(({ label, desc }) => (
               <button
                 key={label}
-                className="flex items-center justify-between p-4 bg-gray-800/40 rounded-xl border border-gray-700/50 hover:border-teal-500/40 hover:bg-gray-800 transition-all group text-left"
+                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700/50 hover:border-teal-500/40 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group text-left"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-200 group-hover:text-teal-400 transition-colors">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
                     {label}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">{desc}</p>

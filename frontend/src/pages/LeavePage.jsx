@@ -34,7 +34,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-export default function LeavePage({ user }) {
+export default function LeavePage({ user, darkMode }) {
   const [leaves, setLeaves] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -239,7 +239,7 @@ export default function LeavePage({ user }) {
           progressPending={isLoading}
           pagination
           highlightOnHover
-          theme="dark"
+          theme={darkMode ? "dark" : "light"}
         />
       </div>
 

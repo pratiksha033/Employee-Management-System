@@ -13,7 +13,7 @@ import RecruitmentPage from "../pages/RecruitmentPage";
 import RewardPage from "../pages/RewardPage";
 import PaySlips from "../pages/PaySlips";
 
-export default function DashboardLayout({ user, onLogout }) {
+export default function DashboardLayout({ user, onLogout, toggleTheme, darkMode }) {
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -21,38 +21,38 @@ export default function DashboardLayout({ user, onLogout }) {
   const renderPage = () => {
     switch (activePage) {
       case "dashboard":
-        return <DashboardPage user={user} />;
+        return <DashboardPage user={user} darkMode={darkMode} />;
       case "department":
-        return <DepartmentPage />;
+        return <DepartmentPage user={user} darkMode={darkMode} />;
       case "settings":
-        return <Settings user={user} />;
+        return <Settings user={user} darkMode={darkMode} />;
 
       // ------ ADMIN ONLY PAGES ------ //
       case "employee":
-        return user?.role === "admin" ? <EmployeePage user={user} /> : <AccessDenied />;
+        return user?.role === "admin" ? <EmployeePage user={user} darkMode={darkMode} /> : <AccessDenied />;
       case "attendance":
-        return <AttendancePage user={user} />;
+        return <AttendancePage user={user} darkMode={darkMode} />;
       case "payroll":
-        return <PayrollPage user={user} />;
+        return <PayrollPage user={user} darkMode={darkMode} />;
       case "payslips":
-        return user?.role === "admin" ? <PaySlips user={user} /> : <AccessDenied />;
+        return user?.role === "admin" ? <PaySlips user={user} darkMode={darkMode} /> : <AccessDenied />;
       case "recruitment":
-        return user?.role === "admin" ? <RecruitmentPage user={user} /> : <AccessDenied />;
+        return user?.role === "admin" ? <RecruitmentPage user={user} darkMode={darkMode} /> : <AccessDenied />;
       case "onboarding":
-        return user?.role === "admin" ? <OnboardingPage user={user} /> : <AccessDenied />;
+        return user?.role === "admin" ? <OnboardingPage user={user} darkMode={darkMode} /> : <AccessDenied />;
 
       // ------ GENERAL PAGES ------ //
       case "leave":
-        return <LeavePage user={user} />;
+        return <LeavePage user={user} darkMode={darkMode} />;
       case "task":
-        return <TaskPage user={user} />;
+        return <TaskPage user={user} darkMode={darkMode} />;
       case "rewards":
-          return <RewardPage user={user} />;
+          return <RewardPage user={user} darkMode={darkMode} />;
       case "salary":
-        return <SalaryPage user={user} />;
+        return <SalaryPage user={user} darkMode={darkMode} />;
 
       default:
-        return <DashboardPage user={user} />;
+        return <DashboardPage user={user} darkMode={darkMode} />;
     }
   };
 
@@ -64,7 +64,7 @@ export default function DashboardLayout({ user, onLogout }) {
   );
 
   return (
-    <div className="flex min-h-screen w-full bg-[#0f172a] text-white overflow-x-hidden">
+    <div className="flex min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white overflow-x-hidden transition-colors duration-300">
 
       {/* ---------------- SIDEBAR ---------------- */}
       <Sidebar
@@ -77,11 +77,24 @@ export default function DashboardLayout({ user, onLogout }) {
 
       {/* ---------------- MAIN CONTENT AREA ---------------- */}
       <div
-        className={`flex-1 min-h-screen w-full bg-[#0f172a] overflow-y-auto p-6 transition-all duration-300 ${
+        className={`relative flex-1 min-h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-y-auto p-6 transition-all duration-300 ${
           sidebarOpen ? "ml-64" : "ml-20"
         }`}
       >
-        {renderPage()}
+        {/* Theme Toggle Button within Dashboard */}
+        <div className="absolute top-6 right-6 z-10">
+          <button
+            onClick={toggleTheme}
+            className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium text-sm"
+          >
+            {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
+          </button>
+        </div>
+
+        {/* Ensure underlying pages don't get covered by absolute toggle if they put content top-right, by adding some pt or using their own internal layout handling. But most pages have margins. */}
+        <div className="mt-2">
+          {renderPage()}
+        </div>
       </div>
     </div>
   );

@@ -112,18 +112,26 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300 
-      ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}
+      className={`min-h-screen font-sans transition-colors duration-300 
+      ${darkMode ? 'bg-slate-950 text-gray-100' : 'bg-slate-50 text-slate-900'}`}
     >
-      {/* 🌙 Toggle Button */}
-      <button
-        onClick={() => setDarkMode(!darkMode)}
-        className="absolute top-4 right-4 bg-gray-700 text-white px-3 py-1 rounded-md shadow-md hover:bg-gray-600"
-      >
-        {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
-      </button>
+      {/* 🌙 Toggle Button for Auth Pages */}
+      {view !== 'dashboard' && (
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className="absolute top-4 right-4 bg-white/20 backdrop-blur-md border border-gray-400/20 text-gray-800 dark:text-white px-4 py-2 rounded-xl shadow-lg hover:bg-white/30 transition-all z-50 flex items-center gap-2 text-sm font-semibold"
+        >
+          {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+        </button>
+      )}
 
-      {renderView()}
+      {view === 'dashboard' ? (
+        <DashboardLayout user={user} onLogout={handleLogout} toggleTheme={() => setDarkMode(!darkMode)} darkMode={darkMode} />
+      ) : (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          {renderView()}
+        </div>
+      )}
     </div>
   );
 }

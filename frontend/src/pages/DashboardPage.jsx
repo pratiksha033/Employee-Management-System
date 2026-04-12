@@ -127,7 +127,7 @@ const AdminDashboard = ({ user }) => {
 
   return (
     <div className="p-6 space-y-8">
-      <h2 className="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h2>
 
       {/* Summary Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -148,8 +148,8 @@ const AdminDashboard = ({ user }) => {
       {/* Analytics Section */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Leave Chart */}
-        <div className="bg-white rounded-xl shadow p-5">
-          <h3 className="font-semibold mb-3 text-gray-700">Leave Status</h3>
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5">
+          <h3 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">Leave Status</h3>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie
@@ -168,7 +168,7 @@ const AdminDashboard = ({ user }) => {
             </PieChart>
           </ResponsiveContainer>
           <div className="text-center mt-[-40px]">
-            <p className="text-lg font-semibold text-gray-700">
+            <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
               Total Leaves: {stats.pendingLeaves + stats.approvedLeaves + stats.rejectedLeaves}
             </p>
           </div>
@@ -176,7 +176,7 @@ const AdminDashboard = ({ user }) => {
             {leaveData.map((item, idx) => (
               <div key={idx} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ background: COLORS[idx] }}></div>
-                <span className="text-gray-600 text-sm">
+                <span className="text-gray-700 dark:text-gray-400 text-sm">
                   {item.name} ({item.value})
                 </span>
               </div>
@@ -185,8 +185,8 @@ const AdminDashboard = ({ user }) => {
         </div>
 
         {/* Attendance Chart */}
-        <div className="bg-white rounded-xl shadow p-5">
-          <h3 className="font-semibold mb-3 text-gray-700">Attendance</h3>
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5">
+          <h3 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">Attendance</h3>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie
@@ -215,7 +215,7 @@ const AdminDashboard = ({ user }) => {
                   className="w-3 h-3 rounded-full"
                   style={{ background: ATTENDANCE_COLORS[idx] }}
                 ></div>
-                <span className="text-gray-600 text-sm">
+                <span className="text-gray-700 dark:text-gray-400 text-sm">
                   {item.name} ({item.value})
                 </span>
               </div>
@@ -224,8 +224,8 @@ const AdminDashboard = ({ user }) => {
         </div>
 
         {/* Recent Rewards Section */}
-        <div className="col-span-2 bg-white rounded-xl shadow p-5">
-          <h3 className="font-semibold mb-5 text-gray-700 text-lg">Recent Rewards</h3>
+      <div className="col-span-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5">
+          <h3 className="font-semibold mb-5 text-gray-800 dark:text-gray-200 text-lg">Recent Rewards</h3>
           <div className="space-y-4">
             {stats.rewards.map((reward, index) => (
               <div
@@ -245,7 +245,7 @@ const AdminDashboard = ({ user }) => {
       </div>
 
       {/* Leaves Per Month Chart */}
-      <div className="bg-white rounded-xl shadow p-5">
+      <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5">
         <h3 className="font-semibold mb-3 text-gray-700">Leaves Per Month</h3>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={leavesPerMonth}>
@@ -427,7 +427,7 @@ const EmployeeDashboard = ({ user }) => {
 
   return (
     <div className="p-6 space-y-8">
-      <h2 className="text-2xl font-bold text-white">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
         Welcome back, {user?.name || "Employee"} 👋
       </h2>
 
@@ -544,8 +544,8 @@ const EmployeeDashboard = ({ user }) => {
       </div>
 
       {/* ==== MY LEAVE STATUS BOXES ==== */}
-      <div className="bg-white rounded-xl shadow p-5">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">My Leave Status</h3>
+      <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">My Leave Status</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-lg">
             <p className="text-sm text-yellow-700">Pending</p>
@@ -565,8 +565,8 @@ const EmployeeDashboard = ({ user }) => {
       {/* ==== Attendance + Task Management Row ==== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Attendance Chart */}
-        <div className="bg-white rounded-xl shadow p-5">
-          <h3 className="font-semibold mb-3 text-gray-700">Attendance</h3>
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5">
+          <h3 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">Attendance</h3>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie
@@ -595,7 +595,7 @@ const EmployeeDashboard = ({ user }) => {
                   className="w-3 h-3 rounded-full"
                   style={{ background: ATTENDANCE_COLORS[idx] }}
                 ></div>
-                <span className="text-gray-600 text-sm">
+                <span className="text-gray-700 dark:text-gray-400 text-sm">
                   {item.name} ({item.value})
                 </span>
               </div>
@@ -604,10 +604,10 @@ const EmployeeDashboard = ({ user }) => {
         </div>
 
         {/* Task Management Panel */}
-        <div className="bg-white rounded-xl shadow p-5">
-          <h3 className="font-semibold mb-3 text-gray-700">My Tasks</h3>
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5">
+          <h3 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">My Tasks</h3>
           {myTasks.length === 0 ? (
-            <p className="text-gray-500 text-sm">No tasks assigned yet.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No tasks assigned yet.</p>
           ) : (
             <div className="space-y-3">
               {myTasks.map((task, idx) => (
@@ -622,8 +622,8 @@ const EmployeeDashboard = ({ user }) => {
                     }`}
                 >
                   <div>
-                    <p className="font-medium text-gray-700">{task.title}</p>
-                    <p className="text-sm text-gray-500">{task.description}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{task.title}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{task.description}</p>
                   </div>
                   <span
                     className={`text-sm font-semibold px-2 py-1 rounded-full 

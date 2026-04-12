@@ -42,17 +42,17 @@ export default function Sidebar({ activePage, setActivePage, onLogout, user }) {
 
   return (
     <div
-      className={`fixed top-0 left-0 h-full flex flex-col bg-gray-900/95 backdrop-blur-md border-r border-gray-800 text-gray-200 transition-all duration-300 shadow-lg
+      className={`fixed top-0 left-0 h-full flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-r border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 transition-all duration-300 shadow-lg
       ${isOpen ? "w-64" : "w-20"}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
         {isOpen && (
-          <h1 className="text-lg font-bold text-teal-400">EmployeeEase</h1>
+          <h1 className="text-lg font-bold text-teal-600 dark:text-teal-400">EmployeeEase</h1>
         )}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="text-gray-400 hover:text-teal-400 transition"
+          className="text-gray-500 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition"
         >
           {isOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
         </button>
@@ -68,11 +68,11 @@ export default function Sidebar({ activePage, setActivePage, onLogout, user }) {
               className={`flex items-center gap-3 p-3 mx-3 rounded-lg transition-all duration-200
               ${
                 activePage === item.key
-                  ? "bg-teal-600/20 text-teal-400 border-l-4 border-teal-500"
-                  : "hover:bg-gray-800 text-gray-300"
+                  ? "bg-teal-50 dark:bg-teal-600/20 text-teal-600 dark:text-teal-400 border-l-4 border-teal-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
               }`}
             >
-              <span className="text-teal-400">{item.icon}</span>
+              <span className="text-teal-500 dark:text-teal-400">{item.icon}</span>
               {isOpen && <span className="text-sm font-medium">{item.label}</span>}
             </button>
           ))}
@@ -80,7 +80,7 @@ export default function Sidebar({ activePage, setActivePage, onLogout, user }) {
       </div>
 
       {/* Logout Button Always Visible */}
-      <div className="p-4 border-t border-gray-800">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-800">
         <button
           onClick={onLogout}
           className="flex items-center justify-center gap-2 w-full bg-red-600 hover:bg-red-700 py-2 rounded-lg text-white transition"
