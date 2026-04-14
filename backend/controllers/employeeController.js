@@ -1,6 +1,6 @@
 import { Employee } from "../models/employeeSchema.js";
-import {User} from "../models/userSchema.js";
-import {Department} from "../models/DepartmentSchema.js";
+import { User } from "../models/userSchema.js";
+import { Department } from "../models/DepartmentSchema.js";
 import bcrypt from "bcrypt";
 
 // ➕ Add Employee (Admin Only)
@@ -42,6 +42,7 @@ export const addEmployee = async (req, res) => {
       email,
       password: hashedPassword,
       role: "employee",
+      department,  // ← set department on User too
     });
 
     // 2️⃣ Create employee profile
@@ -69,7 +70,9 @@ export const addEmployee = async (req, res) => {
 // 📋 Get All Employees
 export const getAllEmployees = async (req, res) => {
   try {
-    const employees = await Employee.find().populate("department", "name");
+    const employees = await Employee.find()
+      .populate("department", "name")
+      .populate("user", "_id name email");
 
     return res.status(200).json({
       success: true,
@@ -155,5 +158,3 @@ export const deleteEmployee = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-

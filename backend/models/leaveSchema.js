@@ -12,9 +12,10 @@ const leaveSchema = new mongoose.Schema(
       enum: ["Sick Leave", "Casual Leave", "Annual Leave", "Unpaid Leave"],
       required: true,
     },
-    department: {
-      type: String,
-      default: "Not Specified",
+    departmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Department",
+    required: true,
     },
     startDate: {
       type: Date,

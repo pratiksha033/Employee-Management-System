@@ -1,9 +1,9 @@
 import { Leave } from "../models/leaveSchema.js";
 import { User } from "../models/userSchema.js";
+import { Employee } from "../models/employeeSchema.js";
 import { catchAsyncError } from "../middleware/catchAsyncError.js";
 import ErrorHandler from "../middleware/error.js";
 
-// 🟢 Employee applies for leave
 export const applyLeave = catchAsyncError(async (req, res, next) => {
   const { leaveType, startDate, endDate, reason } = req.body;
 
@@ -11,78 +11,77 @@ export const applyLeave = catchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler("All fields are required", 400));
   }
 
-  // ✅ Ensure user is fetched from token
   const user = await User.findById(req.user._id);
-  if (!user) return next(new ErrorHandler("User not found", 404));
+  if (!user) {
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+  // Get department — from User, or fallback to Employee model
+  let departmentId = user.department;
+  if (!departmentId) {
+    const empRecord = await Employee.findOne({ user: user._id });
+    departmentId = empRecord?.department || null;
+    // Also update User.department for future use
+    if (departmentId) {
+      await User.findByIdAndUpdate(user._id, { department: departmentId });
+    }
+  }
+
+  if (!departmentId) {
+    return next(new ErrorHandler("Department not found for this employee", 404));
+  }
 
   const start = new Date(startDate);
   const end = new Date(endDate);
-
   if (end < start) {
     return next(new ErrorHandler("End date cannot be before start date", 400));
   }
 
-  const diffTime = Math.abs(end - start);
-  const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  const totalDays =
+    Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-  // ✅ Proper creation with valid ObjectId reference
   const leave = await Leave.create({
-    employeeId: user._id, // make sure this is ObjectId
+    employeeId: user._id,
+    departmentId,
     leaveType,
-    department: user.department || "Unknown",
     startDate: start,
     endDate: end,
     totalDays,
     reason,
   });
 
-  res.status(201).json({
-    success: true,
-    message: "Leave applied successfully",
-    leave,
-  });
+  res.status(201).json({ success: true, leave });
 });
 
-// 🟢 Employee views own leaves
-export const getMyLeaves = catchAsyncError(async (req, res, next) => {
+export const getMyLeaves = catchAsyncError(async (req, res) => {
   const leaves = await Leave.find({ employeeId: req.user._id })
-    .populate("employeeId", "name email empId department")
+    .populate("employeeId", "name email")
+    .populate("departmentId", "name")
     .sort({ createdAt: -1 });
 
-  res.status(200).json({ success: true, leaves });
+  res.json({ success: true, leaves });
 });
 
-// 🟢 Admin views all leaves
-export const getAllLeaves = catchAsyncError(async (req, res, next) => {
+export const getAllLeaves = catchAsyncError(async (req, res) => {
   const leaves = await Leave.find()
-    .populate({
-      path: "employeeId",
-      select: "name email empId department role",
-      
-    })
+    .populate("employeeId", "name email")
+    .populate("departmentId", "name")
     .sort({ createdAt: -1 });
 
-  res.status(200).json({ success: true, leaves });
+  res.json({ success: true, leaves });
 });
 
-// 🟢 Admin updates leave status
 export const updateLeaveStatus = catchAsyncError(async (req, res, next) => {
-  const { id } = req.params;
   const { status } = req.body;
+  const leave = await Leave.findById(req.params.id);
 
-  const leave = await Leave.findById(id);
   if (!leave) return next(new ErrorHandler("Leave not found", 404));
-
-  if (!["Approved", "Rejected", "Pending"].includes(status)) {
-    return next(new ErrorHandler("Invalid status value", 400));
+  if (!["Pending", "Approved", "Rejected"].includes(status)) {
+    return next(new ErrorHandler("Invalid status", 400));
   }
 
   leave.status = status;
   await leave.save();
 
-  res.status(200).json({
-    success: true,
-    message: `Leave status updated to ${status}`,
-    leave,
-  });
+  res.json({ success: true, leave });
 });

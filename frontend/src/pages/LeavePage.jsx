@@ -38,6 +38,7 @@ export default function LeavePage({ user }) {
   const [leaves, setLeaves] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [selectedLeave, setSelectedLeave] = useState(null);
 
   const [newLeave, setNewLeave] = useState({
     startDate: "",
@@ -123,7 +124,7 @@ export default function LeavePage({ user }) {
     const s1 = filter === "All" || l.status === filter;
     const s2 =
       !searchId ||
-      l.employeeId?.empId?.toLowerCase().includes(searchId.toLowerCase());
+      l.employeeId?.name?.toLowerCase().includes(searchId.toLowerCase());
     return s1 && s2;
   });
 
@@ -133,15 +134,15 @@ export default function LeavePage({ user }) {
 
     ...(isAdmin
       ? [
-          { name: "Emp ID", selector: (row) => row.employeeId?.empId || "N/A" },
-          { name: "Name", selector: (row) => row.employeeId?.name || "N/A" },
-        ]
+        { name: "Name", selector: (row) => row.employeeId?.name || "N/A" },
+        { name: "Email", selector: (row) => row.employeeId?.email || "N/A" },
+      ]
       : []),
 
     { name: "Leave Type", selector: (row) => row.leaveType },
     {
       name: "Department",
-      selector: (row) => row.employeeId?.department || row.department,
+      selector: (row) => row.departmentId?.name || "N/A",
     },
     { name: "Days", selector: (row) => calculateDays(row.startDate, row.endDate) },
 
@@ -172,7 +173,10 @@ export default function LeavePage({ user }) {
             </>
           )}
 
-          <button className="bg-blue-600/80 hover:bg-blue-700 text-white px-3 py-1 rounded-lg">
+          <button
+            onClick={() => setSelectedLeave(row)}
+            className="bg-blue-600/80 hover:bg-blue-700 text-white px-3 py-1 rounded-lg"
+          >
             <Eye size={14} />
           </button>
         </div>
@@ -204,7 +208,7 @@ export default function LeavePage({ user }) {
       {isAdmin && (
         <div className="flex justify-between mb-6">
           <input
-            placeholder="Search by Emp ID"
+            placeholder="Search by Employee Name"
             className="px-3 py-2 rounded-lg bg-[#1F2937] border border-gray-700 w-1/4"
             value={searchId}
             onChange={(e) => setSearchId(e.target.value)}
@@ -215,11 +219,10 @@ export default function LeavePage({ user }) {
               <button
                 key={s}
                 onClick={() => setFilter(s)}
-                className={`px-4 py-2 rounded-lg ${
-                  filter === s
-                    ? "bg-teal-600 text-white"
-                    : "bg-[#1F2937] text-gray-300 border border-gray-700"
-                }`}
+                className={`px-4 py-2 rounded-lg ${filter === s
+                  ? "bg-teal-600 text-white"
+                  : "bg-[#1F2937] text-gray-300 border border-gray-700"
+                  }`}
               >
                 {s}
               </button>
@@ -310,6 +313,101 @@ export default function LeavePage({ user }) {
                 Submit
               </button>
             </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Leave Detail View Modal */}
+      {selectedLeave && (
+        <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50">
+          <div className="bg-[#111827] p-8 rounded-2xl shadow-2xl border border-gray-700 w-full max-w-lg">
+
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">Leave Details</h2>
+              <button
+                onClick={() => setSelectedLeave(null)}
+                className="text-gray-400 hover:text-white transition"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Status Badge */}
+            <div className="mb-6 flex justify-center">
+              <StatusBadge status={selectedLeave.status} />
+            </div>
+
+            {/* Details Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              {isAdmin && (
+                <>
+                  <div className="bg-[#1F2937] p-4 rounded-xl">
+                    <p className="text-gray-400 text-xs mb-1">Employee Name</p>
+                    <p className="text-white font-semibold">{selectedLeave.employeeId?.name || "N/A"}</p>
+                  </div>
+                  <div className="bg-[#1F2937] p-4 rounded-xl">
+                    <p className="text-gray-400 text-xs mb-1">Email</p>
+                    <p className="text-white font-semibold text-sm">{selectedLeave.employeeId?.email || "N/A"}</p>
+                  </div>
+                </>
+              )}
+
+              <div className="bg-[#1F2937] p-4 rounded-xl">
+                <p className="text-gray-400 text-xs mb-1">Department</p>
+                <p className="text-white font-semibold">{selectedLeave.departmentId?.name || "N/A"}</p>
+              </div>
+
+              <div className="bg-[#1F2937] p-4 rounded-xl">
+                <p className="text-gray-400 text-xs mb-1">Leave Type</p>
+                <p className="text-white font-semibold">{selectedLeave.leaveType}</p>
+              </div>
+
+              <div className="bg-[#1F2937] p-4 rounded-xl">
+                <p className="text-gray-400 text-xs mb-1">Start Date</p>
+                <p className="text-white font-semibold">
+                  {new Date(selectedLeave.startDate).toLocaleDateString("en-IN")}
+                </p>
+              </div>
+
+              <div className="bg-[#1F2937] p-4 rounded-xl">
+                <p className="text-gray-400 text-xs mb-1">End Date</p>
+                <p className="text-white font-semibold">
+                  {new Date(selectedLeave.endDate).toLocaleDateString("en-IN")}
+                </p>
+              </div>
+
+              <div className="bg-[#1F2937] p-4 rounded-xl col-span-2">
+                <p className="text-gray-400 text-xs mb-1">Total Days</p>
+                <p className="text-white font-semibold">
+                  {calculateDays(selectedLeave.startDate, selectedLeave.endDate)} day(s)
+                </p>
+              </div>
+
+              <div className="bg-[#1F2937] p-4 rounded-xl col-span-2">
+                <p className="text-gray-400 text-xs mb-1">Reason</p>
+                <p className="text-white">{selectedLeave.reason}</p>
+              </div>
+            </div>
+
+            {/* Admin Actions inside modal */}
+            {isAdmin && selectedLeave.status === "Pending" && (
+              <div className="flex gap-3 mt-6 justify-end">
+                <button
+                  onClick={() => { updateStatus(selectedLeave._id, "Approved"); setSelectedLeave(null); }}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-semibold"
+                >
+                  <Check size={16} /> Approve
+                </button>
+                <button
+                  onClick={() => { updateStatus(selectedLeave._id, "Rejected"); setSelectedLeave(null); }}
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl font-semibold"
+                >
+                  <X size={16} /> Reject
+                </button>
+              </div>
+            )}
 
           </div>
         </div>

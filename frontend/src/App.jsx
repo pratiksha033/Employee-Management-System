@@ -24,15 +24,21 @@ export default function App() {
   }, [darkMode]);
 
 
-  // Check auth on mount
+  // Check auth on mount — fetch full profile so department/_id are available
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    const userName = localStorage.getItem('userName');
-    const userRole = localStorage.getItem('userRole');
-    if (token && userName) {
-      setUser({ name: userName, role: userRole });
-      setView('dashboard');
-    }
+    if (!token) return;
+    fetch('http://localhost:4000/api/v1/user/profile', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) {
+          setUser({ ...data.user, _id: data.user.id || data.user._id });
+          setView('dashboard');
+        }
+      })
+      .catch(() => { });
   }, []);
 
   const handleLogin = async (email, password) => {
@@ -48,7 +54,17 @@ export default function App() {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('userName', data.user.name);
       localStorage.setItem('userRole', data.user.role);
-      setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
+
+      // Fetch full profile to get department + _id
+      const profileRes = await fetch('http://localhost:4000/api/v1/user/profile', {
+        headers: { Authorization: `Bearer ${data.token}` },
+      });
+      const profileData = await profileRes.json();
+      const fullUser = profileData.success
+        ? { ...profileData.user, _id: profileData.user.id || profileData.user._id }
+        : { name: data.user.name, email: data.user.email, role: data.user.role };
+
+      setUser(fullUser);
       setView('dashboard');
       alert(data.message);
     } catch (error) {

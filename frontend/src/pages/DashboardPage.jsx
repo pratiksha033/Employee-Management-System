@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Users, Building2, Clock } from "lucide-react";
+import { Users, Building2, Clock, LogIn, LogOut, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -79,10 +79,10 @@ const AdminDashboard = ({ user }) => {
 
   useEffect(() => {
     fetchStats();
-     fetchAllLeaves();
+    fetchAllLeaves();
     const interval = setInterval(fetchStats, 30000); // every 30 seconds
-  return () => clearInterval(interval);
-  
+    return () => clearInterval(interval);
+
   }, []);
 
   if (isLoading)
@@ -108,21 +108,21 @@ const AdminDashboard = ({ user }) => {
   ];
 
   // Prepare Attendance Chart
-    const attendanceData = [
+  const attendanceData = [
     { name: "Present", value: stats.attendance.present },
     { name: "Absent", value: stats.attendance.absent },
     { name: "Leave", value: stats.attendance.leave },
   ];
 
   // Prepare Leaves Per Month
- const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const leavesPerMonth = months.map(m => ({ month: m, leaves: 0 }));
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const leavesPerMonth = months.map(m => ({ month: m, leaves: 0 }));
 
-allLeaves.forEach(leave => {
-  const date = new Date(leave.startDate);
-  const monthIndex = date.getMonth();
-  leavesPerMonth[monthIndex].leaves += 1;
-});
+  allLeaves.forEach(leave => {
+    const date = new Date(leave.startDate);
+    const monthIndex = date.getMonth();
+    leavesPerMonth[monthIndex].leaves += 1;
+  });
 
 
   return (
@@ -252,7 +252,7 @@ allLeaves.forEach(leave => {
             <XAxis dataKey="month" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="leaves" fill="#4cb0c9ff" radius={[6,6,0,0]} />
+            <Bar dataKey="leaves" fill="#4cb0c9ff" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -267,11 +267,64 @@ const EmployeeDashboard = ({ user }) => {
   const [error, setError] = useState(null);
   const [myLeaves, setMyLeaves] = useState([]);
   const [myTasks, setMyTasks] = useState([]);
+
+  // ✅ Attendance states
+  const [todayStatus, setTodayStatus] = useState(null); // null | { status, checkInTime, checkOutTime }
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Live clock
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Fetch today's status
+  const fetchTodayStatus = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:4000/api/v1/attendance/today-status", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+      });
+      setTodayStatus(data);
+    } catch (err) {
+      console.error("Error fetching today status:", err.message);
+    }
+  };
+
+  // Check In handler
+  const handleCheckIn = async () => {
+    setAttendanceLoading(true);
+    try {
+      await axios.post("http://localhost:4000/api/v1/attendance/checkin", {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+      });
+      await fetchTodayStatus();
+    } catch (err) {
+      alert(err.response?.data?.message || "Check-in failed");
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
+  // Check Out handler
+  const handleCheckOut = async () => {
+    setAttendanceLoading(true);
+    try {
+      await axios.post("http://localhost:4000/api/v1/attendance/checkout", {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+      });
+      await fetchTodayStatus();
+    } catch (err) {
+      alert(err.response?.data?.message || "Check-out failed");
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
   const fethchMyTasks = async () => {
     try {
-      const { data } = await axios.get( "http://localhost:4000/api/v1/tasks/my", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
-        }
+      const { data } = await axios.get("http://localhost:4000/api/v1/tasks/my", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+      }
       );
       console.log("My Tasks Data:", data);
       setMyTasks(data.tasks || []);
@@ -283,6 +336,7 @@ const EmployeeDashboard = ({ user }) => {
 
   useEffect(() => {
     fethchMyTasks();
+    fetchTodayStatus();
   }, []);
   const fetchStats = async () => {
     try {
@@ -354,11 +408,135 @@ const EmployeeDashboard = ({ user }) => {
   const approved = myLeaves.filter(l => l.status === "Approved").length;
   const rejected = myLeaves.filter(l => l.status === "Rejected").length;
 
+  // Format time as HH:MM:SS IST
+  const formatTime = (date) => {
+    return date.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: true });
+  };
+
+  const formatDateTime = (isoStr) => {
+    if (!isoStr) return "--";
+    return new Date(isoStr).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: true });
+  };
+
+  const getStatusColor = (status) => {
+    if (status === "Present") return { bg: "#d1fae5", text: "#065f46", border: "#10b981" };
+    if (status === "Late") return { bg: "#fef3c7", text: "#92400e", border: "#f59e0b" };
+    if (status === "Absent") return { bg: "#fee2e2", text: "#991b1b", border: "#ef4444" };
+    return { bg: "#f3f4f6", text: "#374151", border: "#9ca3af" };
+  };
+
   return (
     <div className="p-6 space-y-8">
-      <h2 className="text-2xl font-bold text-white-800">
+      <h2 className="text-2xl font-bold text-white">
         Welcome back, {user?.name || "Employee"} 👋
       </h2>
+
+      {/* ✅ CHECK-IN / CHECK-OUT CARD */}
+      <div style={{
+        background: "linear-gradient(135deg, #1e3a5f 0%, #0f2544 100%)",
+        borderRadius: "16px",
+        padding: "24px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+        border: "1px solid rgba(255,255,255,0.1)"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+          {/* Left: Clock */}
+          <div>
+            <p style={{ color: "#94a3b8", fontSize: "13px", marginBottom: "4px" }}>⏰ Current Time (IST)</p>
+            <p style={{ color: "#ffffff", fontSize: "32px", fontWeight: "700", fontFamily: "monospace", letterSpacing: "2px" }}>
+              {formatTime(currentTime)}
+            </p>
+            <p style={{ color: "#64748b", fontSize: "13px", marginTop: "4px" }}>
+              {currentTime.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            </p>
+          </div>
+
+          {/* Right: Status + Buttons */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px" }}>
+            {/* Status Badge */}
+            {todayStatus && todayStatus.status !== "Not Marked" ? (
+              <div style={{
+                padding: "6px 16px",
+                borderRadius: "999px",
+                background: getStatusColor(todayStatus.status).bg,
+                color: getStatusColor(todayStatus.status).text,
+                fontWeight: "700",
+                fontSize: "14px",
+                border: `2px solid ${getStatusColor(todayStatus.status).border}`
+              }}>
+                {todayStatus.status === "Present" && <span>✅ Present</span>}
+                {todayStatus.status === "Late" && <span>⚠️ Late</span>}
+                {todayStatus.status === "Absent" && <span>❌ Absent</span>}
+              </div>
+            ) : (
+              <div style={{ padding: "6px 16px", borderRadius: "999px", background: "rgba(255,255,255,0.1)", color: "#94a3b8", fontSize: "14px" }}>
+                🕐 Not checked in yet
+              </div>
+            )}
+
+            {/* Check In / Check Out Buttons */}
+            <div style={{ display: "flex", gap: "10px" }}>
+              {!todayStatus?.checkInTime ? (
+                <button
+                  onClick={handleCheckIn}
+                  disabled={attendanceLoading}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "8px",
+                    padding: "10px 24px", borderRadius: "10px",
+                    background: attendanceLoading ? "#374151" : "linear-gradient(135deg, #10b981, #059669)",
+                    color: "white", fontWeight: "700", fontSize: "15px",
+                    border: "none", cursor: attendanceLoading ? "not-allowed" : "pointer",
+                    boxShadow: "0 4px 15px rgba(16,185,129,0.4)",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <LogIn size={18} />
+                  {attendanceLoading ? "Checking In..." : "Check In"}
+                </button>
+              ) : !todayStatus?.checkOutTime ? (
+                <button
+                  onClick={handleCheckOut}
+                  disabled={attendanceLoading}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "8px",
+                    padding: "10px 24px", borderRadius: "10px",
+                    background: attendanceLoading ? "#374151" : "linear-gradient(135deg, #ef4444, #dc2626)",
+                    color: "white", fontWeight: "700", fontSize: "15px",
+                    border: "none", cursor: attendanceLoading ? "not-allowed" : "pointer",
+                    boxShadow: "0 4px 15px rgba(239,68,68,0.4)",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <LogOut size={18} />
+                  {attendanceLoading ? "Checking Out..." : "Check Out"}
+                </button>
+              ) : (
+                <div style={{ color: "#10b981", fontWeight: "600", fontSize: "14px" }}>✅ Day Complete</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Check-in / Check-out time display */}
+        {todayStatus?.checkInTime && (
+          <div style={{
+            marginTop: "16px", paddingTop: "16px",
+            borderTop: "1px solid rgba(255,255,255,0.1)",
+            display: "flex", gap: "32px", flexWrap: "wrap"
+          }}>
+            <div>
+              <p style={{ color: "#64748b", fontSize: "12px" }}>CHECK IN</p>
+              <p style={{ color: "#10b981", fontSize: "16px", fontWeight: "700" }}>{formatDateTime(todayStatus.checkInTime)}</p>
+            </div>
+            {todayStatus?.checkOutTime && (
+              <div>
+                <p style={{ color: "#64748b", fontSize: "12px" }}>CHECK OUT</p>
+                <p style={{ color: "#ef4444", fontSize: "16px", fontWeight: "700" }}>{formatDateTime(todayStatus.checkOutTime)}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <StatCard title="Total Employees" value={stats.totalEmployees} icon={<Users size={38} />} colorClass="bg-teal-600" />
@@ -436,10 +614,9 @@ const EmployeeDashboard = ({ user }) => {
                 <div
                   key={idx}
                   className={`p-4 rounded-lg shadow flex justify-between items-center
-                    ${
-                      task.status === "Pending"
-                        ? "bg-yellow-100 border-l-4 border-yellow-500"
-                        : task.status === "In Progress"
+                    ${task.status === "Pending"
+                      ? "bg-yellow-100 border-l-4 border-yellow-500"
+                      : task.status === "In Progress"
                         ? "bg-blue-100 border-l-4 border-blue-500"
                         : "bg-green-100 border-l-4 border-green-500"
                     }`}
@@ -450,10 +627,9 @@ const EmployeeDashboard = ({ user }) => {
                   </div>
                   <span
                     className={`text-sm font-semibold px-2 py-1 rounded-full 
-                      ${
-                        task.status === "Pending"
-                          ? "bg-yellow-200 text-yellow-800"
-                          : task.status === "In Progress"
+                      ${task.status === "Pending"
+                        ? "bg-yellow-200 text-yellow-800"
+                        : task.status === "In Progress"
                           ? "bg-blue-200 text-blue-800"
                           : "bg-green-200 text-green-800"
                       }`}
