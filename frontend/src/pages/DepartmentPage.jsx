@@ -4,9 +4,7 @@ import { Pencil, Trash2, Plus, X } from "lucide-react";
 const API_BASE_URL = "http://localhost:4000/api/v1/department";
 
 const getAuthToken = () => localStorage.getItem("authToken");
-const getUserRole = () => localStorage.getItem("userRole");
-
-export default function DepartmentPage() {
+export default function DepartmentPage({ user, darkMode }) {
   const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -17,8 +15,7 @@ export default function DepartmentPage() {
   const [newDept, setNewDept] = useState({ name: "", description: "" });
   const [editDept, setEditDept] = useState(null);
 
-  const userRole = getUserRole();
-  const isAdmin = userRole === "admin";
+  const isAdmin = user?.role === "admin";
 
   // Fetch All Departments
   const fetchDepartments = async () => {
@@ -131,11 +128,11 @@ export default function DepartmentPage() {
   );
 
   return (
-    <div className="p-6 bg-[#0A0F1F] min-h-screen text-white">
+    <div className="p-6">
 
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Department Management</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Department Management</h1>
 
         {isAdmin && (
           <button
@@ -154,12 +151,12 @@ export default function DepartmentPage() {
           placeholder="Search Department..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-1/2 px-4 py-2 bg-[#1F2937] border border-gray-700 rounded-lg text-white"
+          className="w-full md:w-1/2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-teal-500/50 transition-all shadow-sm"
         />
       </div>
 
       {/* TABLE */}
-      <div className="bg-[#111827] rounded-xl p-6 border border-gray-700 shadow-xl">
+      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm">
         {isLoading ? (
           <p>Loading...</p>
         ) : filtered.length === 0 ? (
@@ -167,18 +164,18 @@ export default function DepartmentPage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="text-left border-b border-gray-700 text-gray-300">
-                <th className="py-3">Name</th>
-                <th className="py-3">Description</th>
-                {isAdmin && <th className="py-3 text-center">Action</th>}
+              <tr className="text-left border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
+                <th className="py-3 px-2">Name</th>
+                <th className="py-3 px-2">Description</th>
+                {isAdmin && <th className="py-3 px-2 text-center">Action</th>}
               </tr>
             </thead>
 
             <tbody>
               {filtered.map((dep) => (
-                <tr key={dep._id} className="border-b border-gray-800">
-                  <td className="py-3">{dep.name}</td>
-                  <td className="py-3">{dep.description}</td>
+                <tr key={dep._id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-gray-800 dark:text-gray-200">
+                  <td className="py-3 px-2">{dep.name}</td>
+                  <td className="py-3 px-2">{dep.description}</td>
 
                   {isAdmin && (
                     <td className="py-3 text-center flex gap-3 justify-center">
@@ -209,22 +206,22 @@ export default function DepartmentPage() {
 
       {/* ADD MODAL */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
-          <div className="bg-[#1F2937] p-6 rounded-xl border border-gray-700 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full max-w-md">
 
-            <h2 className="text-xl font-semibold mb-4">Add Department</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Add Department</h2>
 
             <input
               type="text"
               placeholder="Department Name"
-              className="w-full p-3 bg-[#111827] border border-gray-600 rounded-lg text-white mb-3"
+              className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white mb-3 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
               value={newDept.name}
               onChange={(e) => setNewDept({ ...newDept, name: e.target.value })}
             />
 
             <textarea
               placeholder="Description"
-              className="w-full p-3 bg-[#111827] border border-gray-600 rounded-lg text-white mb-3"
+              className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white mb-3 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
               value={newDept.description}
               onChange={(e) =>
                 setNewDept({ ...newDept, description: e.target.value })
@@ -234,13 +231,13 @@ export default function DepartmentPage() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 bg-gray-600 rounded-lg"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAdd}
-                className="px-4 py-2 bg-teal-600 rounded-lg hover:bg-teal-700"
+                className="px-4 py-2 bg-teal-600 rounded-lg hover:bg-teal-700 text-white shadow-md transition-colors"
               >
                 Add
               </button>
@@ -251,14 +248,14 @@ export default function DepartmentPage() {
 
       {/* EDIT MODAL */}
       {showEditModal && editDept && (
-        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
-          <div className="bg-[#1F2937] p-6 rounded-xl border border-gray-700 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full max-w-md">
 
-            <h2 className="text-xl font-semibold mb-4">Edit Department</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Edit Department</h2>
 
             <input
               type="text"
-              className="w-full p-3 bg-[#111827] border border-gray-600 rounded-lg text-white mb-3"
+              className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white mb-3 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
               value={editDept.name}
               onChange={(e) =>
                 setEditDept({ ...editDept, name: e.target.value })
@@ -266,24 +263,24 @@ export default function DepartmentPage() {
             />
 
             <textarea
-              className="w-full p-3 bg-[#111827] border border-gray-600 rounded-lg text-white mb-3"
+              className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white mb-3 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
               value={editDept.description}
               onChange={(e) =>
                 setEditDept({ ...editDept, description: e.target.value })
               }
             />
 
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-3 mt-2">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 bg-gray-600 rounded-lg"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg transition-colors"
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleUpdate}
-                className="px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700"
+                className="px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700 text-white shadow-md transition-colors"
               >
                 Save Changes
               </button>

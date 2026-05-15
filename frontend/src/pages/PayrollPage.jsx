@@ -77,9 +77,19 @@ const PayrollPage = ({ user }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        employeeId: form.employeeId,
+        month: form.month,
+        baseSalary: Number(form.baseSalary || 0),
+        bonus: Number(form.bonus || 0),
+        overtimePay: Number(form.overtimePay || 0),
+        tax: Number(form.tax || 0),
+        leaveDeductions: Number(form.leaveDeductions || 0),
+      };
+
       await axios.post(
         `${API_BASE_URL}/payroll/generate`,
-        form,
+        payload,
         getAuthConfig()
       );
       alert("Payroll generated successfully!");
@@ -95,7 +105,7 @@ const PayrollPage = ({ user }) => {
       setSelectedDepartment("");
       fetchPayrolls();
     } catch (err) {
-      alert("Failed to generate payroll");
+      alert(err.response?.data?.message || err.message || "Failed to generate payroll");
     }
   };
 
@@ -112,11 +122,11 @@ const PayrollPage = ({ user }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0d1117] via-[#0f172a] to-[#020617] p-6 text-white">
+    <div className="p-6">
 
       {/* ================= ADMIN PAYROLL ================= */}
       {user?.role === "admin" && (
-        <div className="max-w-5xl mx-auto mb-10 bg-[#161b22]/80 backdrop-blur rounded-2xl shadow-xl p-8">
+        <div className="max-w-5xl mx-auto mb-10 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-8">
           <h2 className="text-3xl font-extrabold text-teal-400 mb-8">
             Generate Payroll
           </h2>
@@ -129,7 +139,7 @@ const PayrollPage = ({ user }) => {
               value={selectedDepartment}
               onChange={handleDepartmentChange}
               required
-              className="input-dark"
+              className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 p-3 rounded-xl text-gray-900 dark:text-gray-100 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition-all"
             >
               <option value="">Select Department</option>
               {departments.map((d) => (
@@ -145,7 +155,7 @@ const PayrollPage = ({ user }) => {
               onChange={handleChange}
               disabled={!selectedDepartment}
               required
-              className="input-dark"
+              className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 p-3 rounded-xl text-gray-900 dark:text-gray-100 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition-all"
             >
               <option value="">Select Employee</option>
               {filteredEmployees.map((e) => (
@@ -155,12 +165,12 @@ const PayrollPage = ({ user }) => {
               ))}
             </select>
 
-            <input type="month" name="month" required onChange={handleChange} className="input-dark" />
-            <input type="number" name="baseSalary" placeholder="Base Salary" required onChange={handleChange} className="input-dark" />
-            <input type="number" name="bonus" placeholder="Bonus" onChange={handleChange} className="input-dark" />
-            <input type="number" name="overtimePay" placeholder="Overtime Pay" onChange={handleChange} className="input-dark" />
-            <input type="number" name="tax" placeholder="Tax" onChange={handleChange} className="input-dark" />
-            <input type="number" name="leaveDeductions" placeholder="Leave Deductions" onChange={handleChange} className="input-dark" />
+            <input type="month" name="month" required onChange={handleChange} className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 p-3 rounded-xl text-gray-900 dark:text-gray-100 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition-all" />
+            <input type="number" name="baseSalary" placeholder="Base Salary" required onChange={handleChange} className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 p-3 rounded-xl text-gray-900 dark:text-gray-100 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition-all" />
+            <input type="number" name="bonus" placeholder="Bonus" onChange={handleChange} className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 p-3 rounded-xl text-gray-900 dark:text-gray-100 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition-all" />
+            <input type="number" name="overtimePay" placeholder="Overtime Pay" onChange={handleChange} className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 p-3 rounded-xl text-gray-900 dark:text-gray-100 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition-all" />
+            <input type="number" name="tax" placeholder="Tax" onChange={handleChange} className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 p-3 rounded-xl text-gray-900 dark:text-gray-100 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition-all" />
+            <input type="number" name="leaveDeductions" placeholder="Leave Deductions" onChange={handleChange} className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 p-3 rounded-xl text-gray-900 dark:text-gray-100 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition-all" />
 
             <button className="col-span-2 bg-gradient-to-r from-teal-500 to-emerald-600 py-3 rounded-xl font-bold text-lg hover:scale-[1.02] transition">
               Generate Payroll
@@ -170,7 +180,7 @@ const PayrollPage = ({ user }) => {
       )}
 
       {/* ================= PAYROLL LIST ================= */}
-      <div className="max-w-6xl mx-auto bg-[#161b22]/80 backdrop-blur rounded-2xl shadow-xl p-8">
+      <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-8">
         <h2 className="text-2xl font-extrabold text-teal-400 mb-6">
           {user?.role === "admin" ? "All Payrolls" : "My Payrolls"}
         </h2>
@@ -192,13 +202,13 @@ const PayrollPage = ({ user }) => {
                 {payrolls.map((p) => (
                   <tr
                     key={p._id}
-                    className="border-b border-gray-700 hover:bg-[#0f172a]/60 transition"
+                    className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#0f172a]/60 text-gray-900 dark:text-white transition"
                   >
                     {user?.role === "admin" && (
                       <td className="td">{p.employee?.name || p.employeeName}</td>
                     )}
                     <td className="td">{p.month}</td>
-                    <td className="td font-bold text-green-400">₹{p.netPay}</td>
+                    <td className="td font-bold text-teal-600 dark:text-green-400">₹{p.netPay}</td>
                     <td className="td">
                       <button
                         onClick={() => downloadPayslip(p._id)}
@@ -215,20 +225,7 @@ const PayrollPage = ({ user }) => {
         )}
       </div>
 
-      {/* ===== Tailwind helpers ===== */}
       <style>{`
-        .input-dark {
-          background: #0f172a;
-          padding: 0.75rem;
-          border-radius: 0.75rem;
-          border: 1px solid #334155;
-          outline: none;
-          transition: all 0.2s;
-        }
-        .input-dark:focus {
-          border-color: #2dd4bf;
-          box-shadow: 0 0 0 2px rgba(45,212,191,0.3);
-        }
         .th {
           padding: 12px;
           text-align: left;

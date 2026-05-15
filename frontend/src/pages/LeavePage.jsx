@@ -16,25 +16,31 @@ const calculateDays = (startDate, endDate) => {
 const StatusBadge = ({ status }) => {
   let color = "";
   let Icon = Clock;
+
   if (status === "Approved") {
-    color = "bg-green-500/20 text-green-400 border border-green-500/40";
+    color =
+      "bg-green-100 text-green-700 border border-green-300 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/40";
     Icon = Check;
   } else if (status === "Rejected") {
-    color = "bg-red-500/20 text-red-400 border border-red-500/40";
+    color =
+      "bg-red-100 text-red-700 border border-red-300 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/40";
     Icon = X;
   } else {
-    color = "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40";
+    color =
+      "bg-yellow-100 text-yellow-700 border border-yellow-300 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/40";
   }
 
   return (
-    <span className={`flex items-center px-3 py-1 rounded-full text-xs font-medium ${color}`}>
+    <span
+      className={`flex items-center px-3 py-1 rounded-full text-xs font-medium ${color}`}
+    >
       <Icon size={14} className="mr-1" />
       {status}
     </span>
   );
 };
 
-export default function LeavePage({ user }) {
+export default function LeavePage({ user, darkMode }) {
   const [leaves, setLeaves] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -53,7 +59,6 @@ export default function LeavePage({ user }) {
   const isAdmin = user?.role === "admin";
   const isEmployee = user?.role === "employee";
 
-  // Fetch Leaves
   const fetchLeaves = async () => {
     const endpoint = isAdmin ? "/all" : "/my-leaves";
     setIsLoading(true);
@@ -77,7 +82,6 @@ export default function LeavePage({ user }) {
     if (user) fetchLeaves();
   }, [user]);
 
-  // Apply Leave
   const handleApplyLeave = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/apply`, {
@@ -100,7 +104,6 @@ export default function LeavePage({ user }) {
     }
   };
 
-  // Update Status (Admin)
   const updateStatus = async (id, status) => {
     try {
       const res = await fetch(`${API_BASE_URL}/update/${id}`, {
@@ -119,7 +122,6 @@ export default function LeavePage({ user }) {
     }
   };
 
-  // Filters
   const filteredLeaves = leaves.filter((l) => {
     const s1 = filter === "All" || l.status === filter;
     const s2 =
@@ -128,23 +130,27 @@ export default function LeavePage({ user }) {
     return s1 && s2;
   });
 
-  // Table Columns
   const columns = [
     { name: "S.No", selector: (row, i) => i + 1, width: "70px" },
 
     ...(isAdmin
       ? [
-        { name: "Name", selector: (row) => row.employeeId?.name || "N/A" },
-        { name: "Email", selector: (row) => row.employeeId?.email || "N/A" },
-      ]
+          { name: "Name", selector: (row) => row.employeeId?.name || "N/A" },
+          { name: "Email", selector: (row) => row.employeeId?.email || "N/A" },
+        ]
       : []),
 
     { name: "Leave Type", selector: (row) => row.leaveType },
+
     {
       name: "Department",
       selector: (row) => row.departmentId?.name || "N/A",
     },
-    { name: "Days", selector: (row) => calculateDays(row.startDate, row.endDate) },
+
+    {
+      name: "Days",
+      selector: (row) => calculateDays(row.startDate, row.endDate),
+    },
 
     {
       name: "Status",
@@ -159,14 +165,14 @@ export default function LeavePage({ user }) {
             <>
               <button
                 onClick={() => updateStatus(row._id, "Approved")}
-                className="bg-green-600/80 hover:bg-green-700 text-white px-3 py-1 rounded-lg"
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg"
               >
                 <Check size={14} />
               </button>
 
               <button
                 onClick={() => updateStatus(row._id, "Rejected")}
-                className="bg-red-600/80 hover:bg-red-700 text-white px-3 py-1 rounded-lg"
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg"
               >
                 <X size={14} />
               </button>
@@ -175,7 +181,7 @@ export default function LeavePage({ user }) {
 
           <button
             onClick={() => setSelectedLeave(row)}
-            className="bg-blue-600/80 hover:bg-blue-700 text-white px-3 py-1 rounded-lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg"
           >
             <Eye size={14} />
           </button>
@@ -185,7 +191,7 @@ export default function LeavePage({ user }) {
   ];
 
   return (
-    <div className="p-6 text-white bg-[#0A0F1F] min-h-screen">
+    <div className="p-6 min-h-screen bg-gray-50 dark:bg-[#0A0F1F] text-gray-900 dark:text-white transition-colors">
 
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
@@ -196,7 +202,7 @@ export default function LeavePage({ user }) {
         {isEmployee && (
           <button
             onClick={() => setShowModal(true)}
-            className="bg-teal-600 px-5 py-2 rounded-lg flex items-center gap-2 hover:bg-teal-700 shadow"
+            className="bg-teal-600 px-5 py-2 rounded-lg flex items-center gap-2 hover:bg-teal-700 text-white"
           >
             <Plus size={18} />
             Apply Leave
@@ -204,12 +210,12 @@ export default function LeavePage({ user }) {
         )}
       </div>
 
-      {/* Admin Filters */}
+      {/* Filters */}
       {isAdmin && (
         <div className="flex justify-between mb-6">
           <input
             placeholder="Search by Employee Name"
-            className="px-3 py-2 rounded-lg bg-[#1F2937] border border-gray-700 w-1/4"
+            className="px-3 py-2 rounded-lg bg-white dark:bg-[#1F2937] border border-gray-300 dark:border-gray-700 w-1/4"
             value={searchId}
             onChange={(e) => setSearchId(e.target.value)}
           />
@@ -219,10 +225,11 @@ export default function LeavePage({ user }) {
               <button
                 key={s}
                 onClick={() => setFilter(s)}
-                className={`px-4 py-2 rounded-lg ${filter === s
-                  ? "bg-teal-600 text-white"
-                  : "bg-[#1F2937] text-gray-300 border border-gray-700"
-                  }`}
+                className={`px-4 py-2 rounded-lg ${
+                  filter === s
+                    ? "bg-teal-600 text-white"
+                    : "bg-white dark:bg-[#1F2937] border border-gray-300 dark:border-gray-700"
+                }`}
               >
                 {s}
               </button>
@@ -232,40 +239,40 @@ export default function LeavePage({ user }) {
       )}
 
       {/* Table */}
-      <div className="bg-[#111827] rounded-xl p-4 shadow-xl border border-gray-700">
+      <div className="bg-white dark:bg-[#111827] rounded-xl p-4 shadow-xl border border-gray-200 dark:border-gray-700">
         <DataTable
           columns={columns}
           data={isAdmin ? filteredLeaves : leaves}
           progressPending={isLoading}
           pagination
           highlightOnHover
-          theme="dark"
+          theme={darkMode ? "dark" : "light"}
         />
       </div>
 
       {/* Apply Leave Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
-          <div className="bg-[#111827] p-6 rounded-xl shadow-xl border border-gray-700 w-full max-w-md">
+          <div className="bg-white dark:bg-[#111827] p-6 rounded-xl border border-gray-300 dark:border-gray-700 w-full max-w-md">
 
-            <h2 className="text-xl font-semibold mb-4 text-white">
+            <h2 className="text-xl font-semibold mb-4">
               Apply for Leave
             </h2>
 
-            {/* Form */}
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="date"
-                  className="p-3 bg-[#1F2937] rounded-lg border border-gray-600 text-white"
+                  className="p-3 bg-gray-100 dark:bg-[#1F2937] rounded-lg border border-gray-300 dark:border-gray-600"
                   value={newLeave.startDate}
                   onChange={(e) =>
                     setNewLeave({ ...newLeave, startDate: e.target.value })
                   }
                 />
+
                 <input
                   type="date"
-                  className="p-3 bg-[#1F2937] rounded-lg border border-gray-600 text-white"
+                  className="p-3 bg-gray-100 dark:bg-[#1F2937] rounded-lg border border-gray-300 dark:border-gray-600"
                   value={newLeave.endDate}
                   onChange={(e) =>
                     setNewLeave({ ...newLeave, endDate: e.target.value })
@@ -274,7 +281,7 @@ export default function LeavePage({ user }) {
               </div>
 
               <select
-                className="p-3 bg-[#1F2937] rounded-lg border border-gray-600 text-white w-full"
+                className="p-3 bg-gray-100 dark:bg-[#1F2937] rounded-lg border border-gray-300 dark:border-gray-600 w-full"
                 value={newLeave.leaveType}
                 onChange={(e) =>
                   setNewLeave({ ...newLeave, leaveType: e.target.value })
@@ -290,7 +297,7 @@ export default function LeavePage({ user }) {
               <textarea
                 rows="3"
                 placeholder="Enter Reason"
-                className="p-3 bg-[#1F2937] rounded-lg border border-gray-600 text-white w-full"
+                className="p-3 bg-gray-100 dark:bg-[#1F2937] rounded-lg border border-gray-300 dark:border-gray-600 w-full"
                 value={newLeave.reason}
                 onChange={(e) =>
                   setNewLeave({ ...newLeave, reason: e.target.value })
@@ -298,14 +305,14 @@ export default function LeavePage({ user }) {
               />
             </div>
 
-            {/* Buttons */}
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 bg-gray-600 rounded-lg text-white"
+                className="px-4 py-2 bg-gray-500 rounded-lg text-white"
               >
                 Cancel
               </button>
+
               <button
                 onClick={handleApplyLeave}
                 className="px-4 py-2 bg-teal-600 hover:bg-teal-700 rounded-lg text-white"
@@ -318,100 +325,6 @@ export default function LeavePage({ user }) {
         </div>
       )}
 
-      {/* Leave Detail View Modal */}
-      {selectedLeave && (
-        <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50">
-          <div className="bg-[#111827] p-8 rounded-2xl shadow-2xl border border-gray-700 w-full max-w-lg">
-
-            {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-white">Leave Details</h2>
-              <button
-                onClick={() => setSelectedLeave(null)}
-                className="text-gray-400 hover:text-white transition"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            {/* Status Badge */}
-            <div className="mb-6 flex justify-center">
-              <StatusBadge status={selectedLeave.status} />
-            </div>
-
-            {/* Details Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {isAdmin && (
-                <>
-                  <div className="bg-[#1F2937] p-4 rounded-xl">
-                    <p className="text-gray-400 text-xs mb-1">Employee Name</p>
-                    <p className="text-white font-semibold">{selectedLeave.employeeId?.name || "N/A"}</p>
-                  </div>
-                  <div className="bg-[#1F2937] p-4 rounded-xl">
-                    <p className="text-gray-400 text-xs mb-1">Email</p>
-                    <p className="text-white font-semibold text-sm">{selectedLeave.employeeId?.email || "N/A"}</p>
-                  </div>
-                </>
-              )}
-
-              <div className="bg-[#1F2937] p-4 rounded-xl">
-                <p className="text-gray-400 text-xs mb-1">Department</p>
-                <p className="text-white font-semibold">{selectedLeave.departmentId?.name || "N/A"}</p>
-              </div>
-
-              <div className="bg-[#1F2937] p-4 rounded-xl">
-                <p className="text-gray-400 text-xs mb-1">Leave Type</p>
-                <p className="text-white font-semibold">{selectedLeave.leaveType}</p>
-              </div>
-
-              <div className="bg-[#1F2937] p-4 rounded-xl">
-                <p className="text-gray-400 text-xs mb-1">Start Date</p>
-                <p className="text-white font-semibold">
-                  {new Date(selectedLeave.startDate).toLocaleDateString("en-IN")}
-                </p>
-              </div>
-
-              <div className="bg-[#1F2937] p-4 rounded-xl">
-                <p className="text-gray-400 text-xs mb-1">End Date</p>
-                <p className="text-white font-semibold">
-                  {new Date(selectedLeave.endDate).toLocaleDateString("en-IN")}
-                </p>
-              </div>
-
-              <div className="bg-[#1F2937] p-4 rounded-xl col-span-2">
-                <p className="text-gray-400 text-xs mb-1">Total Days</p>
-                <p className="text-white font-semibold">
-                  {calculateDays(selectedLeave.startDate, selectedLeave.endDate)} day(s)
-                </p>
-              </div>
-
-              <div className="bg-[#1F2937] p-4 rounded-xl col-span-2">
-                <p className="text-gray-400 text-xs mb-1">Reason</p>
-                <p className="text-white">{selectedLeave.reason}</p>
-              </div>
-            </div>
-
-            {/* Admin Actions inside modal */}
-            {isAdmin && selectedLeave.status === "Pending" && (
-              <div className="flex gap-3 mt-6 justify-end">
-                <button
-                  onClick={() => { updateStatus(selectedLeave._id, "Approved"); setSelectedLeave(null); }}
-                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-semibold"
-                >
-                  <Check size={16} /> Approve
-                </button>
-                <button
-                  onClick={() => { updateStatus(selectedLeave._id, "Rejected"); setSelectedLeave(null); }}
-                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl font-semibold"
-                >
-                  <X size={16} /> Reject
-                </button>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
     </div>
   );
 }

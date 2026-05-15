@@ -155,10 +155,10 @@ export default function SettingsPage({ user }) {
   );
 
   const inputCls =
-    "w-full p-3 bg-gray-800/60 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors text-sm";
+    "w-full p-3 bg-white dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors text-sm";
 
   const disabledCls =
-    "w-full p-3 bg-gray-800/30 border border-gray-700/50 rounded-xl text-gray-500 text-sm cursor-not-allowed";
+    "w-full p-3 bg-gray-100 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700/50 rounded-xl text-gray-500 text-sm cursor-not-allowed";
 
   /* ─────────────── ACCOUNT INFO ─────────────── */
   const roleColor =
@@ -176,9 +176,8 @@ export default function SettingsPage({ user }) {
 
   /* ─────────────── RENDER ─────────────── */
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 p-6">
-      {/* ── Page Header ── */}
-      <div className="mb-10">
+    <div className="max-w-5xl mx-auto space-y-6 pb-10">
+      <div className="mb-8 mt-4">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
           Settings
         </h1>
@@ -235,7 +234,7 @@ export default function SettingsPage({ user }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* ── Profile Info Card ── */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
               <div className="w-8 h-8 bg-teal-500/10 rounded-lg flex items-center justify-center">
                 <User size={16} className="text-teal-400" />
@@ -303,13 +302,13 @@ export default function SettingsPage({ user }) {
           </div>
 
           {/* ── Account Info Card (read-only) ── */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
               <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center">
                 <Fingerprint size={16} className="text-purple-400" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-white">Account Information</h3>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Account Information</h3>
                 <p className="text-gray-500 text-xs">Your account details at a glance</p>
               </div>
             </div>
@@ -343,13 +342,13 @@ export default function SettingsPage({ user }) {
               ].map(({ icon: Icon, label, value, color }) => (
                 <div
                   key={label}
-                  className="flex items-center justify-between p-3 bg-gray-800/40 rounded-xl border border-gray-700/50"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700/50"
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon size={15} className={color} />
                     <span className="text-xs text-gray-400 font-medium">{label}</span>
                   </div>
-                  <span className="text-sm text-gray-200 font-medium truncate max-w-[160px] text-right">
+                  <span className="text-sm text-gray-800 dark:text-gray-200 font-medium truncate max-w-[160px] text-right">
                     {value}
                   </span>
                 </div>
@@ -357,7 +356,7 @@ export default function SettingsPage({ user }) {
             </div>
 
             {/* Account ID */}
-            <div className="mt-4 p-3 bg-gray-800/40 rounded-xl border border-gray-700/50">
+            <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700/50">
               <p className="text-xs text-gray-500 mb-1">Account ID</p>
               <p className="text-xs text-gray-400 font-mono truncate">
                 {user?._id || user?.id || "—"}
@@ -367,187 +366,238 @@ export default function SettingsPage({ user }) {
         </div>
 
         {/* ══════════ CHANGE PASSWORD ══════════ */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center">
-              <Lock size={16} className="text-amber-400" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-white">Change Password</h3>
-              <p className="text-gray-500 text-xs">Keep your account secure with a strong password</p>
-            </div>
-          </div>
+<div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
+  <div className="flex items-center gap-2 mb-6">
+    <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center">
+      <Lock size={16} className="text-amber-500 dark:text-amber-400" />
+    </div>
+    <div>
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+        Change Password
+      </h3>
+      <p className="text-gray-600 dark:text-gray-500 text-xs">
+        Keep your account secure with a strong password
+      </p>
+    </div>
+  </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { key: "currentPassword", label: "Current Password", showKey: "current" },
-              { key: "newPassword", label: "New Password", showKey: "new" },
-              { key: "confirmPassword", label: "Confirm Password", showKey: "confirm" },
-            ].map(({ key, label, showKey }) => (
-              <Field key={key} label={label} icon={Lock}>
-                <div className="relative">
-                  <input
-                    type={showPw[showKey] ? "text" : "password"}
-                    className={inputCls + " pr-10"}
-                    placeholder="••••••••"
-                    value={passwords[key]}
-                    onChange={(e) =>
-                      setPasswords({ ...passwords, [key]: e.target.value })
-                    }
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowPw({ ...showPw, [showKey]: !showPw[showKey] })
-                    }
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-                  >
-                    {showPw[showKey] ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </Field>
-            ))}
-          </div>
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    {[
+      { key: "currentPassword", label: "Current Password", showKey: "current" },
+      { key: "newPassword", label: "New Password", showKey: "new" },
+      { key: "confirmPassword", label: "Confirm Password", showKey: "confirm" },
+    ].map(({ key, label, showKey }) => (
+      <Field key={key} label={label} icon={Lock}>
+        <div className="relative">
+          <input
+            type={showPw[showKey] ? "text" : "password"}
+            className={inputCls + " pr-10"}
+            placeholder="••••••••"
+            value={passwords[key]}
+            onChange={(e) =>
+              setPasswords({ ...passwords, [key]: e.target.value })
+            }
+          />
 
-          {/* Password strength hint */}
-          {passwords.newPassword && (
-            <div className="mt-3 flex items-center gap-2">
-              {["Weak", "Fair", "Strong"].map((level, i) => {
-                const strength =
-                  passwords.newPassword.length < 6 ? 0 :
-                    passwords.newPassword.length < 10 ? 1 : 2;
-                return (
-                  <div key={level} className="flex-1">
-                    <div
-                      className={`h-1.5 rounded-full transition-all ${i <= strength
-                        ? i === 0 ? "bg-red-500" : i === 1 ? "bg-amber-500" : "bg-emerald-500"
-                        : "bg-gray-700"
-                        }`}
-                    />
-                  </div>
-                );
-              })}
-              <span className="text-xs text-gray-500">
-                {passwords.newPassword.length < 6 ? "Weak"
-                  : passwords.newPassword.length < 10 ? "Fair" : "Strong"}
-              </span>
-            </div>
-          )}
-
-          <div className="mt-4 space-y-3">
-            <Toast message={pwMsg.text} type={pwMsg.type} />
-            <button
-              onClick={handleChangePassword}
-              disabled={pwLoading}
-              className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-60 px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all shadow-lg shadow-amber-600/20 flex items-center gap-2"
-            >
-              {pwLoading ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <Lock size={15} />
-                  Update Password
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() =>
+              setShowPw({ ...showPw, [showKey]: !showPw[showKey] })
+            }
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            {showPw[showKey] ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
         </div>
+      </Field>
+    ))}
+  </div>
+
+  {/* Password strength */}
+  {passwords.newPassword && (
+    <div className="mt-3 flex items-center gap-2">
+      {["Weak", "Fair", "Strong"].map((level, i) => {
+        const strength =
+          passwords.newPassword.length < 6
+            ? 0
+            : passwords.newPassword.length < 10
+            ? 1
+            : 2;
+
+        return (
+          <div key={level} className="flex-1">
+            <div
+              className={`h-1.5 rounded-full transition-all ${
+                i <= strength
+                  ? i === 0
+                    ? "bg-red-500"
+                    : i === 1
+                    ? "bg-amber-500"
+                    : "bg-emerald-500"
+                  : "bg-gray-300 dark:bg-gray-700"
+              }`}
+            />
+          </div>
+        );
+      })}
+
+      <span className="text-xs text-gray-600 dark:text-gray-500">
+        {passwords.newPassword.length < 6
+          ? "Weak"
+          : passwords.newPassword.length < 10
+          ? "Fair"
+          : "Strong"}
+      </span>
+    </div>
+  )}
+
+  <div className="mt-4 space-y-3">
+    <Toast message={pwMsg.text} type={pwMsg.type} />
+
+    <button
+      onClick={handleChangePassword}
+      disabled={pwLoading}
+      className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-60 px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all shadow-lg shadow-amber-600/20 flex items-center gap-2"
+    >
+      {pwLoading ? (
+        <>
+          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          Updating...
+        </>
+      ) : (
+        <>
+          <Lock size={15} />
+          Update Password
+        </>
+      )}
+    </button>
+  </div>
+</div>
 
         {/* ══════════ NOTIFICATION PREFERENCES ══════════ */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
-              <Bell size={16} className="text-blue-400" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-white">Notification Preferences</h3>
-              <p className="text-gray-500 text-xs">Choose what updates you want to receive</p>
-            </div>
-          </div>
+<div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
+  <div className="flex items-center gap-2 mb-6">
+    <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
+      <Bell size={16} className="text-blue-500 dark:text-blue-400" />
+    </div>
+    <div>
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+        Notification Preferences
+      </h3>
+      <p className="text-gray-600 dark:text-gray-500 text-xs">
+        Choose what updates you want to receive
+      </p>
+    </div>
+  </div>
 
-          <div className="space-y-3">
-            {[
-              { key: "emailAlerts", label: "Email Alerts", desc: "General account notifications via email" },
-              { key: "attendanceReminders", label: "Attendance Reminders", desc: "Daily check-in / check-out reminders" },
-              { key: "leaveUpdates", label: "Leave Status Updates", desc: "Get notified when leave is approved or rejected" },
-              { key: "payrollNotifs", label: "Payroll Notifications", desc: "Salary slip generation and payroll alerts" },
-            ].map(({ key, label, desc }) => (
-              <div
-                key={key}
-                className="flex items-center justify-between p-4 bg-gray-800/40 rounded-xl border border-gray-700/50 hover:border-gray-600 transition-colors"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-200">{label}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
-                </div>
-                <button
-                  onClick={() => setNotifs({ ...notifs, [key]: !notifs[key] })}
-                  className={`relative w-11 h-6 rounded-full transition-all duration-300 ${notifs[key] ? "bg-teal-500" : "bg-gray-700"
-                    }`}
-                >
-                  <span
-                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 ${notifs[key] ? "translate-x-5" : "translate-x-0"
-                      }`}
-                  />
-                </button>
-              </div>
-            ))}
-          </div>
+  <div className="space-y-3">
+    {[
+      { key: "emailAlerts", label: "Email Alerts", desc: "General account notifications via email" },
+      { key: "attendanceReminders", label: "Attendance Reminders", desc: "Daily check-in / check-out reminders" },
+      { key: "leaveUpdates", label: "Leave Status Updates", desc: "Get notified when leave is approved or rejected" },
+      { key: "payrollNotifs", label: "Payroll Notifications", desc: "Salary slip generation and payroll alerts" },
+    ].map(({ key, label, desc }) => (
+      <div
+        key={key}
+        className="flex items-center justify-between p-4 
+        bg-gray-50 dark:bg-gray-800/40 
+        rounded-xl border border-gray-200 dark:border-gray-700/50 
+        hover:border-gray-300 dark:hover:border-gray-600 
+        transition-colors"
+      >
+        <div>
+          <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+            {label}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            {desc}
+          </p>
         </div>
 
-        {/* ══════════ QUICK LINKS ══════════ */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-          <h3 className="text-base font-semibold text-white mb-4">Quick Links</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[
-              { label: "Privacy Policy", desc: "How we handle your data" },
-              { label: "Terms of Service", desc: "Platform usage terms" },
-              { label: "Help & Support", desc: "Get assistance from the team" },
-              { label: "Report an Issue", desc: "Report bugs or feedback" },
-            ].map(({ label, desc }) => (
-              <button
-                key={label}
-                className="flex items-center justify-between p-4 bg-gray-800/40 rounded-xl border border-gray-700/50 hover:border-teal-500/40 hover:bg-gray-800 transition-all group text-left"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-200 group-hover:text-teal-400 transition-colors">
-                    {label}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
-                </div>
-                <ChevronRight size={16} className="text-gray-600 group-hover:text-teal-400 transition-colors" />
-              </button>
-            ))}
-          </div>
+        <button
+          onClick={() => setNotifs({ ...notifs, [key]: !notifs[key] })}
+          className={`relative w-11 h-6 rounded-full transition-all duration-300 ${
+            notifs[key] ? "bg-teal-500" : "bg-gray-300 dark:bg-gray-700"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 ${
+              notifs[key] ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+    ))}
+  </div>
+</div>
+{/* ══════════ QUICK LINKS ══════════ */}
+<div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
+  <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
+    Quick Links
+  </h3>
+
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    {[
+      { label: "Privacy Policy", desc: "How we handle your data" },
+      { label: "Terms of Service", desc: "Platform usage terms" },
+      { label: "Help & Support", desc: "Get assistance from the team" },
+      { label: "Report an Issue", desc: "Report bugs or feedback" },
+    ].map(({ label, desc }) => (
+      <button
+        key={label}
+        className="flex items-center justify-between p-4 
+        bg-gray-50 dark:bg-gray-800/40 
+        rounded-xl border border-gray-200 dark:border-gray-700/50
+        hover:border-teal-500/40 
+        hover:bg-gray-100 dark:hover:bg-gray-800 
+        transition-all group text-left"
+      >
+        <div>
+          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+            {label}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            {desc}
+          </p>
         </div>
 
-        {/* ══════════ DANGER ZONE ══════════ */}
-        <div className="bg-red-950/20 border border-red-800/40 rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center">
-              <AlertCircle size={16} className="text-red-400" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-red-400">Danger Zone</h3>
-              <p className="text-gray-500 text-xs">These actions are irreversible — proceed with caution</p>
-            </div>
-          </div>
+        <ChevronRight
+          size={16}
+          className="text-gray-600 dark:text-gray-400 group-hover:text-teal-400 transition-colors"
+        />
+      </button>
+    ))}
+  </div>
+</div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-red-700/50 text-red-400 text-sm font-medium hover:bg-red-500/10 transition-all">
-              <LogOut size={15} />
-              Sign Out of All Devices
-            </button>
-            <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-red-700/50 text-red-400 text-sm font-medium hover:bg-red-500/10 transition-all">
-              <AlertCircle size={15} />
-              Delete My Account
-            </button>
-          </div>
-        </div>
+       {/* ══════════ DANGER ZONE ══════════ */}
+<div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-2xl p-6">
+  <div className="flex items-center gap-2 mb-4">
+    <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center">
+      <AlertCircle size={16} className="text-red-500 dark:text-red-400" />
+    </div>
+    <div>
+      <h3 className="text-base font-semibold text-red-600 dark:text-red-400">
+        Danger Zone
+      </h3>
+      <p className="text-gray-600 dark:text-gray-500 text-xs">
+        These actions are irreversible — proceed with caution
+      </p>
+    </div>
+  </div>
 
+  <div className="flex flex-col sm:flex-row gap-3">
+    <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-red-300 dark:border-red-700/50 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-100 dark:hover:bg-red-500/10 transition-all">
+      <LogOut size={15} />
+      Sign Out of All Devices
+    </button>
+
+    <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-red-300 dark:border-red-700/50 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-100 dark:hover:bg-red-500/10 transition-all">
+      <AlertCircle size={15} />
+      Delete My Account
+    </button>
+  </div>
+</div>
         {/* Footer note */}
         <p className="text-center text-xs text-gray-600 pb-4">
           EmployeeEase v1.0 · Build 2025 · All rights reserved

@@ -6,7 +6,7 @@ const API_BASE_URL = "http://localhost:4000/api/v1";
 const getAuthToken = () => localStorage.getItem("authToken");
 
 const inputDarkClass =
-  "w-full bg-[#1E1E1E] border border-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500";
+  "w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-200 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500";
 
 const darkTableStyles = {
   table: { style: { backgroundColor: "#111827", color: "#d1d5db" } },
@@ -56,7 +56,7 @@ const formatDate = (dateString) => {
   });
 };
 
-export default function EmployeePage({ user }) {
+export default function EmployeePage({ user, darkMode }) {
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -247,9 +247,9 @@ export default function EmployeePage({ user }) {
   ];
 
   return (
-    <div className="p-6 text-gray-200">
+    <div className="p-6 text-gray-900 dark:text-gray-200">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-semibold">Manage Employees</h2>
+        <h2 className="text-3xl font-semibold text-gray-900 dark:text-white">Manage Employees</h2>
         <button
           onClick={() => setShowModal(true)}
           className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
@@ -258,21 +258,21 @@ export default function EmployeePage({ user }) {
         </button>
       </div>
 
-      <div className="bg-gray-900 rounded-xl shadow-xl p-4">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-4">
         <DataTable
           columns={columns}
           data={employees}
           progressPending={isLoading}
           pagination
           highlightOnHover
-          customStyles={darkTableStyles}
+          theme={darkMode ? "dark" : "light"}
         />
       </div>
 
       {/* ---------- MODAL ---------- */}
       {showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gray-900 text-gray-200 rounded-xl shadow-2xl p-6 w-full max-w-lg">
+          <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 rounded-xl shadow-2xl p-6 w-full max-w-lg">
             <h3 className="text-xl font-semibold mb-4">
               {isEditMode ? "Edit Employee" : "Add Employee"}
             </h3>
